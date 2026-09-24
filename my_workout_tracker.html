@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>My 5-Day Workout</title>
+<style>
+:root {
+  --bg:#f4f4f5; --card:#fff; --text:#171717; --muted:#737373;
+  --line:#e5e5e5; --accent:#111; --done:#e9f7ee; --doneText:#207a3d;
+  --header-h:140px;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; padding:0; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  overscroll-behavior-y:none;
+}
+button, .tab, input, a { touch-action:manipulation; }
+header {
+  background:#111; color:white;
+  padding:calc(20px + env(safe-area-inset-top,0px)) calc(18px + env(safe-area-inset-right,0px)) 18px calc(18px + env(safe-area-inset-left,0px));
+  position:sticky; top:0; z-index:10;
+}
+.header-row { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.auth-screen {
+  min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center;
+  padding:20px calc(20px + env(safe-area-inset-right,0px)) 20px calc(20px + env(safe-area-inset-left,0px));
+}
+.auth-card { background:white; border:1px solid var(--line); border-radius:18px; padding:24px; width:100%; max-width:360px; }
+.auth-card h1 { margin:0 0 2px; font-size:22px; }
+.auth-card .subtitle { color:var(--muted); font-size:13px; margin-bottom:18px; }
+.auth-card label { margin-top:12px; }
+.auth-card input { width:100%; margin-top:4px; border:1px solid #d9d9d9; border-radius:10px; padding:11px 12px; font-size:16px; background:#fafafa; }
+.auth-actions { display:flex; gap:8px; margin-top:18px; }
+.auth-actions button { flex:1; }
+.auth-hint { text-align:center; margin-top:14px; font-size:13px; }
+.auth-hint a { color:var(--muted); }
+.auth-error { background:#fdecec; color:#a33; border-radius:10px; padding:9px 12px; font-size:13px; margin-bottom:4px; }
+.auth-error.ok { background:#e9f7ee; color:#207a3d; }
+.auth-user-bar {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font-size:12px; color:#bbb; padding-top:4px;
+}
+.auth-logout { background:transparent; border:none; color:#ddd; text-decoration:underline; padding:2px 4px; font-weight:700; font-size:12px; }
+h1 { font-size:24px; margin:0 0 4px; }
+.subtitle { color:#aaa; font-size:13px; }
+.date { margin-top:14px; font-size:13px; color:#ccc; }
+.tabs {
+  display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  padding:12px calc(14px + env(safe-area-inset-right,0px)) 12px calc(14px + env(safe-area-inset-left,0px));
+  background:white; border-bottom:1px solid var(--line);
+  position:sticky; top:var(--header-h); z-index:9;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar { display:none; }
+.tab {
+  border:1px solid var(--line); background:white; border-radius:999px;
+  padding:9px 13px; white-space:nowrap; font-weight:700; font-size:13px;
+  user-select:none; position:relative;
+}
+.tab.active { background:#111; color:white; border-color:#111; }
+.next-dot {
+  display:inline-block; width:7px; height:7px; border-radius:50%;
+  background:#2563eb; margin-left:6px; vertical-align:middle;
+}
+.tab.active .next-dot { background:#7dd3fc; }
+main { max-width:760px; margin:auto; padding:16px calc(14px + env(safe-area-inset-right,0px)) 40px calc(14px + env(safe-area-inset-left,0px)); }
+.day-title { font-size:25px; font-weight:800; margin:6px 0 2px; }
+.day-focus { color:var(--muted); margin-bottom:16px; }
+.progress-wrap {
+  background:white; border:1px solid var(--line); border-radius:14px;
+  padding:12px 14px; margin-bottom:14px;
+}
+.progress-top { display:flex; justify-content:space-between; font-size:13px; font-weight:700; }
+.progress-bar { height:7px; background:#eee; border-radius:99px; margin-top:9px; overflow:hidden; }
+.progress-fill { height:100%; width:0; background:#111; border-radius:99px; transition:.2s; }
+.section-title {
+  font-size:14px; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--muted); font-weight:800; margin:20px 4px 8px;
+}
+.exercise {
+  background:var(--card); border:1px solid var(--line); border-radius:15px;
+  padding:14px; margin-bottom:10px; transition:.15s;
+}
+.exercise.done { background:var(--done); border-color:#c9ead3; }
+.exercise-head { display:flex; align-items:flex-start; gap:10px; }
+.check-wrap { display:flex; align-items:center; justify-content:center; padding:8px; margin:-8px; flex:0 0 auto; }
+.check {
+  -webkit-appearance:none; appearance:none;
+  width:26px; height:26px; margin:0; border:2px solid #ccc; border-radius:8px;
+  background:white; position:relative; cursor:pointer; flex:0 0 auto;
+}
+.check:checked { background:#111; border-color:#111; }
+.check:checked::after {
+  content:""; position:absolute; left:7px; top:3px; width:7px; height:13px;
+  border:solid white; border-width:0 3px 3px 0; transform:rotate(45deg);
+}
+.name-wrap { flex:1 1 auto; min-width:0; }
+.name { font-weight:750; font-size:16px; line-height:1.25; }
+.muscle { color:var(--muted); font-size:12px; margin-top:3px; }
+.howto {
+  flex:0 0 auto; background:#f2f2f2; border:1px solid var(--line);
+  border-radius:999px; padding:8px 12px; font-size:12px; font-weight:700;
+  color:#111; white-space:nowrap; display:inline-block; text-decoration:none;
+}
+.howto:active { background:#e6e6e6; }
+.set-list { margin:12px 0 0 36px; }
+.set-row { display:grid; grid-template-columns:20px 1fr 14px 1fr 26px; align-items:center; gap:6px; margin-bottom:6px; }
+.set-label { font-size:11px; color:var(--muted); font-weight:800; text-align:center; }
+.set-x { text-align:center; color:var(--muted); font-size:12px; }
+.set-row input[type=number] { margin-top:0; padding:9px 8px; font-size:16px; }
+.set-row.stale input[type=number] { color:#b8b8b8; }
+.set-row.stale .set-x, .set-row.stale .set-label { color:#c9c9c9; }
+.set-remove {
+  background:transparent; border:none; color:var(--muted); font-size:15px;
+  padding:4px; width:26px; height:26px;
+}
+.set-remove-spacer { width:26px; height:26px; display:inline-block; }
+.add-set-btn {
+  background:#fafafa; border:1px dashed #c9c9c9; color:#555; font-weight:700;
+  font-size:12px; padding:8px; width:100%; border-radius:10px; margin-top:2px;
+}
+.comment-wrap { margin:12px 0 0 36px; }
+.comment-wrap textarea {
+  width:100%; margin-top:4px; border:1px solid #d9d9d9; border-radius:10px;
+  padding:9px 10px; font-size:16px; background:#fafafa; font-family:inherit; resize:vertical;
+}
+.cal-ex-comment { font-size:11px; color:var(--muted); margin:-4px 0 8px 2px; font-style:italic; }
+label { font-size:11px; color:var(--muted); font-weight:700; display:block; }
+input[type=number] {
+  width:100%; margin-top:4px; border:1px solid #d9d9d9; border-radius:10px;
+  padding:10px; font-size:16px; background:#fafafa;
+}
+.actions { display:flex; gap:8px; margin:18px 0 0; }
+button {
+  border:0; border-radius:11px; padding:11px 13px; font-weight:750;
+  cursor:pointer; font-size:13px;
+}
+.secondary { background:white; border:1px solid var(--line); }
+.primary { background:#111; color:white; flex:1; padding:13px; font-size:14px; }
+.small-note { color:var(--muted); font-size:12px; margin-top:15px; text-align:center; }
+.storage-warning {
+  background:#fff7e6; border:1px solid #f3e0ad; color:#7a5b00;
+  border-radius:12px; padding:10px 12px; font-size:12px; margin-bottom:14px;
+}
+/* Calendar view */
+.cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.cal-month-label { font-weight:800; font-size:18px; text-transform:capitalize; }
+.cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:var(--muted); font-weight:800; margin-bottom:6px; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.cal-cell {
+  aspect-ratio:1; border:1px solid var(--line); background:white; border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; position:relative; padding:0; color:var(--text);
+}
+.cal-cell.empty { border:none; background:transparent; }
+.cal-cell.is-today { border-color:#2563eb; border-width:3px; font-weight:800; }
+.cal-cell.has-data { background:var(--done); border-color:#c9ead3; color:var(--doneText); }
+.cal-cell.is-selected { outline:2px solid #111; outline-offset:-2px; }
+.cal-cell.future { background:#f4f4f5; border-color:var(--line); color:#c4c4c4; cursor:default; }
+.cal-cell.is-rest { background:#f1eafb; border-color:#d8c3f5; color:#7c3aed; }
+.cal-dot { width:5px; height:5px; border-radius:50%; background:var(--doneText); margin-top:3px; }
+.cal-dot.rest-dot { background:#7c3aed; }
+.cal-fire { position:absolute; top:1px; right:3px; font-size:10px; line-height:1; }
+.muscle-chart { background:white; border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:20px; }
+.muscle-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:13px; }
+.muscle-row:last-child { margin-bottom:0; }
+.muscle-label { flex:0 0 118px; font-weight:700; color:var(--text); }
+.muscle-bar-wrap { flex:1; background:#eee; border-radius:99px; height:10px; overflow:hidden; }
+.muscle-bar { height:100%; background:#111; border-radius:99px; }
+.muscle-count { flex:0 0 22px; text-align:right; font-weight:800; color:var(--muted); font-size:12px; }
+.report-day { background:white; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; overflow:hidden; }
+.report-day-header {
+  width:100%; display:flex; justify-content:space-between; align-items:center;
+  gap:10px; padding:13px 14px; background:white; border:none; border-radius:0; text-align:left;
+}
+.report-day-date { font-weight:800; font-size:14px; }
+.report-day-titles { font-size:12px; color:var(--muted); margin-top:2px; }
+.report-caret { color:var(--muted); font-size:16px; transition:transform .15s ease; flex-shrink:0; }
+.report-caret.open { transform:rotate(90deg); }
+.report-day-body { padding:0 14px 14px; border-top:1px solid var(--line); }
+.reset-wrap { text-align:center; margin-top:24px; }
+.reset-btn { background:transparent; border:1px solid #eecccc; color:#b23b3b; font-size:12px; font-weight:700; padding:9px 14px; }
+.header-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.header-actions .secondary.active-view { background:#333; color:white; border-color:#333; }
+.cal-picker { background:white; border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:16px; }
+.cal-picker-label { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:800; margin-bottom:10px; }
+.cal-picker-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cal-picker-btn { border:1px solid var(--line); background:#fafafa; border-radius:11px; padding:11px 10px; font-size:13px; font-weight:700; text-align:center; }
+.cal-picker-btn:active { background:#eee; }
+.cal-picker-btn.rest { grid-column:1 / -1; background:#7c3aed; color:white; border-color:#7c3aed; }
+.cal-picker-btn.active { outline:3px solid #111; outline-offset:-3px; font-weight:800; }
+.cal-picker-btn.rest.active { outline:3px solid #4c1d95; outline-offset:-3px; }
+.cal-picker-btn.locked { opacity:.6; cursor:not-allowed; }
+.rest-note { color:#7c3aed; font-weight:700; }
+.cardio-row { display:grid; grid-template-columns:1.3fr 1fr; gap:8px; }
+.cardio-row label { font-size:11px; color:var(--muted); font-weight:700; display:block; }
+.cardio-row select, .cardio-row input {
+  width:100%; margin-top:4px; border:1px solid #d9d9d9; border-radius:10px;
+  padding:10px; font-size:16px; background:#fafafa;
+}
+.cal-detail { background:white; border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:16px; }
+.cal-detail-date { font-weight:800; font-size:15px; margin-bottom:6px; text-transform:capitalize; }
+.cal-detail-workout {
+  font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:800;
+  margin:12px 0 6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+}
+.cal-detail-workout:first-child { margin-top:0; }
+.cal-ex-row { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.cal-ex-row:last-child { border-bottom:none; }
+.cal-ex-name { flex:1; }
+.cal-ex-stats { color:var(--muted); font-weight:700; white-space:nowrap; }
+.toast {
+  position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%) translateY(20px);
+  background:#111; color:white; padding:12px 18px; border-radius:999px;
+  font-size:13px; font-weight:700; opacity:0; transition:.25s; pointer-events:none; z-index:50;
+  max-width:80vw; text-align:center;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+@media (min-width:700px) {
+  .tabs { justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<div id="authScreen" class="auth-screen" style="display:none">
+  <div class="auth-card">
+    <h1>My Workout</h1>
+    <div class="subtitle">Entre com e-mail e senha para salvar seu progresso na nuvem</div>
+    <div id="authError" class="auth-error" style="display:none"></div>
+    <label>E-MAIL</label>
+    <input type="email" id="authEmail" autocomplete="email" placeholder="voce@email.com">
+    <label>SENHA</label>
+    <input type="password" id="authPassword" autocomplete="current-password" placeholder="mínimo 6 caracteres">
+    <div class="auth-actions">
+      <button class="primary" onclick="authLogin()">Entrar</button>
+      <button class="secondary" onclick="authSignup()">Criar conta</button>
+    </div>
+    <div class="auth-hint"><a href="#" onclick="authReset();return false;">Esqueci minha senha</a></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none">
+<header>
+  <div class="header-row">
+    <div>
+      <h1>My Workout</h1>
+      <div class="subtitle">5-day training tracker</div>
+    </div>
+    <div class="header-actions">
+      <button class="secondary" id="workoutToggleBtn" onclick="switchView('workout')">🏋️ Treino</button>
+      <button class="secondary" id="calToggleBtn" onclick="switchView('calendar')">📅 Calendário</button>
+      <button class="secondary" id="reportToggleBtn" onclick="switchView('report')">📊 Relatório</button>
+    </div>
+  </div>
+  <div id="authUserBar" class="auth-user-bar" style="display:none"></div>
+  <div class="date" id="today"></div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+<main id="app"></main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+const workouts = [
+  {
+    id:"shoulders",
+    short:"Shoulders",
+    title:"Shoulders",
+    focus:"Priority: lateral deltoid",
+    sections:[
+      {name:"Shoulders", exercises:[
+        ["Shoulder press (machine or dumbbells)","Deltoid"],
+        ["Dumbbell lateral raise","Lateral deltoid"],
+        ["Machine lateral raise","Lateral deltoid"],
+        ["Single-arm cable lateral raise","Lateral deltoid"],
+        ["Reverse pec deck","Rear deltoid"],
+        ["Face pull","Rear deltoid / upper back"]
+      ]}
+    ]
+  },
+  {
+    id:"chest",
+    short:"Chest + Triceps",
+    title:"Chest + Shoulders + Triceps",
+    focus:"Chest work with extra lateral-delt volume",
+    sections:[
+      {name:"Chest", exercises:[
+        ["Incline bench press","Chest"],
+        ["Flat bench press","Chest"],
+        ["Machine chest fly","Chest"]
+      ]},
+      {name:"Shoulders", exercises:[
+        ["Dumbbell lateral raise","Lateral deltoid"],
+        ["Machine lateral raise","Lateral deltoid"]
+      ]},
+      {name:"Triceps", exercises:[
+        ["Rope triceps pushdown","Triceps"],
+        ["W-bar triceps extension","Triceps"]
+      ]}
+    ]
+  },
+  {
+    id:"back",
+    short:"Back + Biceps",
+    title:"Back + Shoulders + Biceps",
+    focus:"Back width and thickness + lateral delts",
+    sections:[
+      {name:"Back", exercises:[
+        ["Wide-grip lat pulldown","Lats"],
+        ["Seated cable row, neutral grip","Back"],
+        ["Single-arm dumbbell row","Back"],
+        ["Chest-supported machine row","Upper / mid back"],
+        ["Cable pullover","Lats"]
+      ]},
+      {name:"Shoulders", exercises:[
+        ["Single-arm cable lateral raise","Lateral deltoid"],
+        ["Reverse pec deck","Rear deltoid"]
+      ]},
+      {name:"Biceps", exercises:[
+        ["W-bar biceps curl","Biceps"],
+        ["Incline dumbbell curl","Biceps"],
+        ["Hammer curl","Biceps / brachialis"]
+      ]}
+    ]
+  },
+  {
+    id:"arms",
+    short:"Arms + Calves",
+    title:"Arms + Calves",
+    focus:"Biceps, triceps and calf work",
+    sections:[
+      {name:"Biceps", exercises:[
+        ["W-bar biceps curl","Biceps"],
+        ["Incline dumbbell curl","Biceps"],
+        ["Hammer curl","Biceps / brachialis"]
+      ]},
+      {name:"Triceps", exercises:[
+        ["W-bar skull crusher","Triceps"],
+        ["Rope triceps pushdown","Triceps"],
+        ["Single-arm cable triceps extension","Triceps"]
+      ]},
+      {name:"Calves", exercises:[
+        ["Standing calf raise","Calves"],
+        ["Seated calf raise","Calves"]
+      ]}
+    ]
+  },
+  {
+    id:"legs",
+    short:"Legs",
+    title:"Legs",
+    focus:"Quads, hamstrings, glutes and calves",
+    sections:[
+      {name:"Legs", exercises:[
+        ["Squat or leg press","Quads / glutes"],
+        ["Leg extension","Quads"],
+        ["Lying leg curl","Hamstrings"],
+        ["Romanian deadlift","Hamstrings / glutes"],
+        ["Seated leg curl","Hamstrings"],
+        ["Glute machine or cable kickback","Glutes"],
+        ["Standing calf raise or calf press","Calves"]
+      ]}
+    ]
+  }
+];
+
+let currentDay = 0;
+let userPickedDay = false;
+let storageOK = true;
+let view = "workout"; // "workout" | "calendar"
+let calendarMonth = new Date();
+let selectedCalendarDate = null;
+let reportOpenDates = {};
+let calendarOpenEntries = {};
+
+const KEY = "myWorkoutTrackerV1";
+const HISTORY_KEY = "myWorkoutHistoryV1";
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+  catch(e) { storageOK = false; return {}; }
+}
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {}; }
+  catch(e) { storageOK = false; return {}; }
+}
+
+function getNextWorkoutIndex() {
+  const logged = [];
+  Object.keys(history).forEach(dk => {
+    (history[dk]||[]).forEach(entry => {
+      if(!entry.isRest && entry.dayId){
+        logged.push({date:dk, savedAt:entry.savedAt||"", dayId:entry.dayId});
+      }
+    });
+  });
+  if(!logged.length) return 0;
+  logged.sort((a,b) => {
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.savedAt < b.savedAt ? -1 : 1;
+  });
+  const last = logged[logged.length-1];
+  const idx = workouts.findIndex(w => w.id === last.dayId);
+  return idx === -1 ? 0 : (idx+1) % workouts.length;
+}
+
+let state = load();
+let history = loadHistory();
+if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex === "number"){
+  currentDay = state.__lastTabIndex;
+  userPickedDay = true;
+} else {
+  currentDay = getNextWorkoutIndex();
+}
+let db = null;
+let stateDirty = false;
+let historyDirty = false;
+
+async function initDb() {
+  if(!window.claude) return;
+  try { db = await window.claude.use("db"); } catch(e) { db = null; }
+  if(!db) return;
+  try {
+    const [stateSnap, histSnap] = await Promise.all([
+      db.doc("data/state").get(),
+      db.doc("data/history").get()
+    ]);
+    // Only adopt the cloud copy if the user hasn't already saved something
+    // locally while this fetch was in flight (avoids clobbering a fresh save).
+    // Clone the data: snapshots from the cloud store are frozen, so
+    // assigning them directly would silently block later edits
+    // (adding a new day, deleting a rest day, etc).
+    if(!stateDirty && stateSnap.exists) state = JSON.parse(JSON.stringify(stateSnap.data() || {}));
+    if(!historyDirty && histSnap.exists) history = JSON.parse(JSON.stringify(histSnap.data() || {}));
+    if(!userPickedDay){
+      if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex === "number"){
+        currentDay = state.__lastTabIndex;
+        userPickedDay = true;
+      } else {
+        currentDay = getNextWorkoutIndex();
+      }
+    }
+  } catch(e) { /* keep local data as fallback */ }
+  render();
+}
+
+// ---- Firebase (email/password login + Firestore sync for public hosting) ----
+const firebaseConfig = {
+  apiKey: "AIzaSyCZ4d-w15dWIkckcZr5WX-1v2FrkVANUXg",
+  authDomain: "workaut-563ef.firebaseapp.com",
+  projectId: "workaut-563ef",
+  storageBucket: "workaut-563ef.firebasestorage.app",
+  messagingSenderId: "905730827262",
+  appId: "1:905730827262:web:a434efff8824c2f30856af"
+};
+let fb = null;
+let fbUser = null;
+
+function initFirebaseAuth() {
+  if(typeof firebase === "undefined"){
+    // Firebase SDK not available (e.g. blocked, offline, or running inside
+    // a Claude artifact preview) — fall back to the legacy behavior.
+    document.getElementById("appRoot").style.display = "";
+    setHeaderHeight();
+    initDb();
+    return;
+  }
+  try {
+    firebase.initializeApp(firebaseConfig);
+    fb = { auth: firebase.auth(), db: firebase.firestore() };
+  } catch(e) {
+    fb = null;
+    document.getElementById("appRoot").style.display = "";
+    setHeaderHeight();
+    initDb();
+    return;
+  }
+  fb.auth.onAuthStateChanged(async (user) => {
+    if(user){
+      fbUser = user;
+      document.getElementById("authScreen").style.display = "none";
+      document.getElementById("appRoot").style.display = "";
+    setHeaderHeight();
+      const bar = document.getElementById("authUserBar");
+      bar.style.display = "flex";
+      bar.innerHTML = `<span>${escapeHtml(user.email||"")}</span><button class="auth-logout" onclick="authLogout()">Sair</button>`;
+      await loadFromFirestore();
+    } else {
+      fbUser = null;
+      document.getElementById("authScreen").style.display = "flex";
+      document.getElementById("appRoot").style.display = "none";
+      document.getElementById("authUserBar").style.display = "none";
+    }
+  });
+}
+
+async function loadFromFirestore() {
+  try {
+    const snap = await fb.db.collection("users").doc(fbUser.uid).get();
+    if(snap.exists){
+      const data = snap.data() || {};
+      if(!stateDirty && data.state) state = JSON.parse(JSON.stringify(data.state));
+      if(!historyDirty && data.history) history = JSON.parse(JSON.stringify(data.history));
+    }
+  } catch(e) { /* keep local fallback */ }
+  if(!userPickedDay){
+    if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex === "number"){
+      currentDay = state.__lastTabIndex;
+      userPickedDay = true;
+    } else {
+      currentDay = getNextWorkoutIndex();
+    }
+  }
+  render();
+}
+
+function authFieldValues() {
+  return {
+    email: document.getElementById("authEmail").value.trim(),
+    pass: document.getElementById("authPassword").value
+  };
+}
+function showAuthError(msg, ok) {
+  const el = document.getElementById("authError");
+  el.textContent = msg;
+  el.style.display = "block";
+  el.classList.toggle("ok", !!ok);
+}
+function hideAuthError() {
+  document.getElementById("authError").style.display = "none";
+}
+function translateAuthError(e) {
+  const code = (e && e.code) || "";
+  const map = {
+    "auth/invalid-email": "E-mail inválido.",
+    "auth/user-not-found": "Conta não encontrada. Tente \"Criar conta\".",
+    "auth/wrong-password": "Senha incorreta.",
+    "auth/email-already-in-use": "Já existe uma conta com esse e-mail. Tente \"Entrar\".",
+    "auth/weak-password": "Senha muito fraca (mínimo 6 caracteres).",
+    "auth/invalid-credential": "E-mail ou senha incorretos.",
+    "auth/missing-password": "Digite uma senha."
+  };
+  return map[code] || "Algo deu errado. Tente novamente.";
+}
+function authLogin() {
+  const {email, pass} = authFieldValues();
+  hideAuthError();
+  if(!email || !pass){ showAuthError("Preencha e-mail e senha."); return; }
+  fb.auth.signInWithEmailAndPassword(email, pass).catch(e => showAuthError(translateAuthError(e)));
+}
+function authSignup() {
+  const {email, pass} = authFieldValues();
+  hideAuthError();
+  if(!email || !pass){ showAuthError("Preencha e-mail e senha."); return; }
+  if(pass.length < 6){ showAuthError("A senha precisa ter pelo menos 6 caracteres."); return; }
+  fb.auth.createUserWithEmailAndPassword(email, pass).catch(e => showAuthError(translateAuthError(e)));
+}
+function authReset() {
+  const {email} = authFieldValues();
+  hideAuthError();
+  if(!email){ showAuthError("Digite seu e-mail acima primeiro."); return; }
+  fb.auth.sendPasswordResetEmail(email)
+    .then(()=> showAuthError("E-mail de redefinição enviado.", true))
+    .catch(e => showAuthError(translateAuthError(e)));
+}
+function authLogout() {
+  if(fb) fb.auth.signOut();
+}
+
+function save() {
+  stateDirty = true;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e) { storageOK = false; }
+  if(db) { db.doc("data/state").set(state).catch(()=>{}); }
+  if(fb && fbUser) { fb.db.collection("users").doc(fbUser.uid).set({state}, {merge:true}).catch(()=>{}); }
+}
+function saveHistoryData() {
+  historyDirty = true;
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }
+  catch(e) { storageOK = false; }
+  if(db) { db.doc("data/history").set(history).catch(()=>{}); }
+  if(fb && fbUser) { fb.db.collection("users").doc(fbUser.uid).set({history}, {merge:true}).catch(()=>{}); }
+}
+
+function key(dayId, sectionIndex, exerciseIndex) {
+  return dayId + "_" + sectionIndex + "_" + exerciseIndex;
+}
+function getItem(k) {
+  const raw = state[k];
+  if(!raw) return {done:false, comment:"", stale:false, sets:[{weight:"",reps:""}]};
+  if(!Array.isArray(raw.sets)){
+    // migrate legacy single weight/reps shape
+    return {done:!!raw.done, comment:raw.comment||"", stale:!!raw.stale, sets:[{weight:raw.weight||"", reps:raw.reps||""}]};
+  }
+  return {done:!!raw.done, comment:raw.comment||"", stale:!!raw.stale, sets: raw.sets.length ? raw.sets : [{weight:"",reps:""}]};
+}
+function ensureItem(k) {
+  const item = getItem(k);
+  state[k] = item;
+  return item;
+}
+function setField(k, field, value) {
+  const item = ensureItem(k);
+  item[field] = value;
+  item.stale = false;
+  save();
+  render();
+}
+function setSetField(k, idx, field, value) {
+  const item = ensureItem(k);
+  item.sets[idx][field] = value;
+  item.stale = false;
+  save();
+}
+function addSet(k) {
+  const item = ensureItem(k);
+  const firstReps = item.sets.length ? item.sets[0].reps : "";
+  item.sets.push({weight:"", reps:firstReps});
+  save();
+  render();
+}
+function removeSet(k, idx) {
+  const item = ensureItem(k);
+  if(item.sets.length <= 1) return;
+  item.sets.splice(idx, 1);
+  save();
+  render();
+}
+function getCardio(dayId) {
+  return { type: state[dayId+"_cardioType"] || "", time: state[dayId+"_cardioTime"] || "" };
+}
+function setCardioField(field, value) {
+  const w = workouts[currentDay];
+  state[w.id + (field==="type" ? "_cardioType" : "_cardioTime")] = value;
+  save();
+}
+function escapeHtml(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function dateKey(d) {
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById("toast");
+  if(!t){ t=document.createElement("div"); t.id="toast"; t.className="toast"; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+function render() {
+  if(view === "calendar") { renderCalendarView(); }
+  else if(view === "report") { renderReportView(); }
+  else { renderWorkoutView(); }
+  setHeaderHeight();
+}
+
+function renderTabs() {
+  const nextIdx = getNextWorkoutIndex();
+  document.getElementById("tabs").innerHTML = workouts.map((w,i) =>
+    `<button class="tab ${i===currentDay?'active':''}" onclick="selectDay(${i})">${i+1}. ${w.short}${i===nextIdx?'<span class="next-dot" title="Próximo da sequência"></span>':''}</button>`
+  ).join("");
+  centerActiveTab();
+}
+
+function centerActiveTab() {
+  const tabsEl = document.getElementById("tabs");
+  const activeEl = tabsEl.querySelector(".tab.active");
+  if(!activeEl) return;
+  const target = activeEl.offsetLeft - (tabsEl.clientWidth/2) + (activeEl.clientWidth/2);
+  tabsEl.scrollTo({left: Math.max(0,target), behavior:"smooth"});
+}
+
+function renderWorkoutView() {
+  document.getElementById("tabs").style.display = "flex";
+  renderTabs();
+  const w = workouts[currentDay];
+  let total=0, done=0;
+
+  w.sections.forEach((s,si) => s.exercises.forEach((e,ei) => {
+    total++;
+    if(getItem(key(w.id,si,ei)).done) done++;
+  }));
+
+  let html = `
+    <div class="day-title">${w.title}</div>
+    <div class="day-focus">${w.focus}</div>
+    ${storageOK ? "" : `<div class="storage-warning">Seu navegador está bloqueando o armazenamento (ex: Navegação Privada), então o progresso pode não ser salvo.</div>`}
+    <div class="progress-wrap">
+      <div class="progress-top"><span>Progress</span><span>${done}/${total}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${total?done/total*100:0}%"></div></div>
+    </div>
+  `;
+
+  w.sections.forEach((section,si) => {
+    html += `<div class="section-title">${section.name}</div>`;
+    section.exercises.forEach((exercise,ei) => {
+      const k=key(w.id,si,ei), item=getItem(k);
+      const safeName = escapeHtml(exercise[0]);
+      html += `
+        <div class="exercise ${item.done?'done':''}" id="ex-${k}">
+          <div class="exercise-head">
+            <label class="check-wrap">
+              <input class="check" type="checkbox" ${item.done?'checked':''}
+                onchange="setField('${k}','done',this.checked)">
+            </label>
+            <div class="name-wrap">
+              <div class="name">${safeName}</div>
+              <div class="muscle">${escapeHtml(exercise[1])}</div>
+            </div>
+            <a class="howto" href="https://www.youtube.com/results?search_query=${encodeURIComponent(exercise[0] + ' exercise proper form technique')}" target="_blank" rel="noopener noreferrer">▶ How to</a>
+          </div>
+          <div class="set-list">
+            ${item.sets.map((st,si2)=>`
+              <div class="set-row ${item.stale?'stale':''}">
+                <div class="set-label">${si2+1}</div>
+                <input type="number" inputmode="decimal" step="0.5" placeholder="kg"
+                  value="${st.weight}" onchange="setSetField('${k}',${si2},'weight',this.value)">
+                <span class="set-x">×</span>
+                <input type="number" inputmode="numeric" placeholder="reps"
+                  value="${st.reps}" onchange="setSetField('${k}',${si2},'reps',this.value)">
+                ${item.sets.length>1?`<button class="set-remove" onclick="removeSet('${k}',${si2})">✕</button>`:'<span class="set-remove-spacer"></span>'}
+              </div>`).join("")}
+            <button class="add-set-btn" onclick="addSet('${k}')">+ Adicionar série</button>
+          </div>
+          <div class="comment-wrap">
+            <label>COMENTÁRIO</label>
+            <textarea rows="2" placeholder="Notas sobre este exercício..."
+              onchange="setField('${k}','comment',this.value)">${escapeHtml(item.comment)}</textarea>
+          </div>
+        </div>`;
+    });
+  });
+
+  const cardio = getCardio(w.id);
+  const cardioOptions = ["Corrida","Caminhada","Elíptico","Escada","Cycling","Bicicleta"];
+  html += `
+    <div class="section-title">Cardio (opcional)</div>
+    <div class="exercise">
+      <div class="cardio-row">
+        <div>
+          <label>TIPO</label>
+          <select onchange="setCardioField('type', this.value)">
+            <option value="">Nenhum</option>
+            ${cardioOptions.map(opt => `<option value="${opt}" ${cardio.type===opt?'selected':''}>${opt}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>TEMPO (MIN)</label>
+          <input type="number" inputmode="numeric" placeholder="e.g. 20"
+            value="${cardio.time}" onchange="setCardioField('time', this.value)">
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="saveProgress()">💾 Salvar progresso</button>
+    </div>
+    <div class="small-note">Marque os exercícios feitos e toque em "Salvar progresso" para registrar no calendário.</div>
+  `;
+  document.getElementById("app").innerHTML = html;
+}
+
+function classifyMuscle(raw) {
+  const stopWords = ["upper","mid","lower","front","rear"];
+  return String(raw).split("/").map(p => p.trim()).map(p => {
+    const low = p.toLowerCase();
+    if(stopWords.includes(low)) return null;
+    if(low.includes("delt")) return "Ombros";
+    if(low.includes("chest")) return "Peito";
+    if(low.includes("tricep")) return "Tríceps";
+    if(low.includes("bicep") || low.includes("brachialis")) return "Bíceps";
+    if(low.includes("lat") || low.includes("back")) return "Costas";
+    if(low.includes("quad") || low.includes("hamstring") || low.includes("glute") || low.includes("calv")) return "Perna";
+    return p;
+  }).filter(Boolean);
+}
+
+function getMuscleGroupCounts() {
+  const counts = {};
+  Object.keys(history).forEach(dk => {
+    (history[dk]||[]).forEach(entry => {
+      (entry.exercises||[]).forEach(ex => {
+        if(!ex.muscle) return;
+        classifyMuscle(ex.muscle).forEach(g => { counts[g] = (counts[g]||0) + 1; });
+      });
+    });
+  });
+  return counts;
+}
+
+function toggleReportDay(dstr) {
+  reportOpenDates[dstr] = !reportOpenDates[dstr];
+  render();
+}
+
+function renderReportView() {
+  document.getElementById("tabs").style.display = "none";
+  const dates = Object.keys(history)
+    .filter(d => (history[d]||[]).some(e => e.exercises && e.exercises.length))
+    .sort().reverse();
+
+  let html = `
+    <div class="day-title">Relatório de treinos</div>
+    <div class="day-focus">Sessões salvas em "Salvar progresso", com o peso de cada exercício. 🔥 marca um novo recorde pessoal.</div>
+  `;
+
+  const muscleCounts = getMuscleGroupCounts();
+  const sortedMuscles = Object.entries(muscleCounts).sort((a,b) => b[1]-a[1]);
+  if(sortedMuscles.length){
+    const maxCount = sortedMuscles[0][1];
+    html += `<div class="section-title">Grupamentos musculares mais trabalhados</div><div class="muscle-chart">`;
+    sortedMuscles.forEach(([g,count]) => {
+      const pct = maxCount ? (count/maxCount*100) : 0;
+      html += `<div class="muscle-row">
+        <div class="muscle-label">${escapeHtml(g)}</div>
+        <div class="muscle-bar-wrap"><div class="muscle-bar" style="width:${pct}%"></div></div>
+        <div class="muscle-count">${count}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="section-title">Sessões registradas</div>`;
+
+  if(!dates.length){
+    html += `<div class="small-note">Nenhum treino salvo ainda. Use "Salvar progresso" na aba de treino para começar a acompanhar.</div>`;
+  } else {
+    dates.forEach(dstr => {
+      const niceDate = new Date(dstr+"T00:00:00").toLocaleDateString(undefined,{weekday:"long", year:"numeric", month:"long", day:"numeric"});
+      const entriesForDate = (history[dstr]||[]).filter(e => e.exercises && e.exercises.length);
+      if(!entriesForDate.length) return;
+      const isOpen = !!reportOpenDates[dstr];
+      const titles = entriesForDate.map(e=>e.title).join(" + ");
+      const dayHasPB = entriesForDate.some(e=>e.hasPB);
+      html += `<div class="report-day">
+        <button class="report-day-header" onclick="toggleReportDay('${dstr}')">
+          <div>
+            <div class="report-day-date">${niceDate}</div>
+            <div class="report-day-titles">${escapeHtml(titles)}${dayHasPB?' 🔥':''}</div>
+          </div>
+          <span class="report-caret ${isOpen?'open':''}">▸</span>
+        </button>`;
+      if(isOpen){
+        html += `<div class="report-day-body">`;
+        entriesForDate.forEach(entry => {
+          html += `<div class="cal-detail-workout">${escapeHtml(entry.title)}</div>`;
+          entry.exercises.forEach(ex => { html += renderExerciseRow(ex); });
+          if(entry.cardio && entry.cardio.type){
+            html += `<div class="cal-ex-row">
+              <div class="cal-ex-name">🏃 ${escapeHtml(entry.cardio.type)}</div>
+              <div class="cal-ex-stats">${entry.cardio.time?escapeHtml(entry.cardio.time)+' min':'—'}</div>
+            </div>`;
+          }
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+  }
+  html += `<div class="reset-wrap"><button class="reset-btn" onclick="resetAllData()">🗑️ Limpar meus dados</button></div>`;
+  document.getElementById("app").innerHTML = html;
+}
+
+function resetAllData() {
+  if(!confirm("Isso apaga todo o seu progresso salvo (treinos, pesos, histórico) desta conta. Não afeta outras pessoas. Tem certeza?")) return;
+  state = {};
+  history = {};
+  try { localStorage.removeItem(KEY); localStorage.removeItem(HISTORY_KEY); } catch(e) {}
+  if(db){
+    db.doc("data/state").set({}).catch(()=>{});
+    db.doc("data/history").set({}).catch(()=>{});
+  }
+  if(fb && fbUser){
+    fb.db.collection("users").doc(fbUser.uid).set({state:{}, history:{}}).catch(()=>{});
+  }
+  currentDay = 0;
+  userPickedDay = false;
+  reportOpenDates = {};
+  calendarOpenEntries = {};
+  showToast("Dados apagados.");
+  switchView("workout");
+}
+
+function toggleCalendarEntry(dstr, idx) {
+  const k = dstr + "::" + idx;
+  calendarOpenEntries[k] = !calendarOpenEntries[k];
+  render();
+}
+
+function renderCalendarView() {
+  document.getElementById("tabs").style.display = "none";
+  const year = calendarMonth.getFullYear(), month = calendarMonth.getMonth();
+  const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = dateKey(new Date());
+
+  let cells = "";
+  for(let i=0;i<startWeekday;i++){ cells += `<div class="cal-cell empty"></div>`; }
+  for(let d=1; d<=daysInMonth; d++){
+    const dstr = dateKey(new Date(year, month, d));
+    const entries = history[dstr];
+    const hasData = !!(entries && entries.length);
+    const isRestDay = !!(entries && entries.length === 1 && entries[0].isRest);
+    const hasPB = !!(entries && entries.some(e=>e.hasPB));
+    const isToday = dstr === todayStr;
+    const isFuture = dstr > todayStr;
+    const isSelected = dstr === selectedCalendarDate;
+    if(isFuture){
+      cells += `<div class="cal-cell future"><span>${d}</span></div>`;
+    } else {
+      cells += `<button class="cal-cell ${hasData?'has-data':''} ${isRestDay?'is-rest':''} ${isToday?'is-today':''} ${isSelected?'is-selected':''}" onclick="selectCalendarDate('${dstr}')">
+        <span>${d}</span>${hasData?`<span class="cal-dot ${isRestDay?'rest-dot':''}"></span>`:''}${hasPB?'<span class="cal-fire">🔥</span>':''}
+      </button>`;
+    }
+  }
+
+  let detailHtml = "";
+  if(selectedCalendarDate){
+    const entries = history[selectedCalendarDate];
+    const isPastOrToday = selectedCalendarDate <= todayStr;
+    const niceDate = new Date(selectedCalendarDate+"T00:00:00").toLocaleDateString(undefined,{weekday:"long", year:"numeric", month:"long", day:"numeric"});
+    if(entries && entries.length && entries[0].isRest){
+      detailHtml = `<div class="cal-detail"><div class="cal-detail-date">${niceDate}</div><div class="small-note rest-note">😴 Dia de descanso</div></div>`;
+    } else if(entries && entries.length){
+      detailHtml = `<div class="cal-detail"><div class="cal-detail-date">${niceDate}</div>`;
+      entries.forEach((entry,idx)=>{
+        const hasBody = (entry.exercises && entry.exercises.length) || (entry.cardio && entry.cardio.type);
+        const entryOpen = !!calendarOpenEntries[selectedCalendarDate+"::"+idx];
+        detailHtml += `<div class="cal-detail-workout" ${hasBody?`onclick="toggleCalendarEntry('${selectedCalendarDate}',${idx})"`:''}>
+          <span>${escapeHtml(entry.title)}${entry.hasPB?' 🔥':''}</span>
+          ${hasBody?`<span class="report-caret ${entryOpen?'open':''}">▸</span>`:''}
+        </div>`;
+        if(!hasBody){
+          detailHtml += `<div class="small-note">Registrado manualmente</div>`;
+        } else if(entryOpen){
+          if(entry.exercises && entry.exercises.length){
+            entry.exercises.forEach(ex=>{
+              detailHtml += renderExerciseRow(ex);
+            });
+          }
+          if(entry.cardio && entry.cardio.type){
+            detailHtml += `<div class="cal-ex-row">
+              <div class="cal-ex-name">🏃 ${escapeHtml(entry.cardio.type)}</div>
+              <div class="cal-ex-stats">${entry.cardio.time?escapeHtml(entry.cardio.time)+' min':'—'}</div>
+            </div>`;
+          }
+        }
+      });
+      detailHtml += `</div>`;
+    } else {
+      detailHtml = `<div class="cal-detail"><div class="cal-detail-date">${niceDate}</div><div class="small-note">Nenhum treino registrado nesse dia.</div></div>`;
+    }
+    if(isPastOrToday){
+      const isRestNow = !!(entries && entries.length===1 && entries[0].isRest);
+      const activeDayIds = (entries && !isRestNow) ? entries.map(e=>e.dayId) : [];
+      const realDayIds = (entries && !isRestNow) ? entries.filter(e=>e.exercises && e.exercises.length).map(e=>e.dayId) : [];
+      const hasAnyReal = realDayIds.length > 0;
+      detailHtml += `<div class="cal-picker">
+        <div class="cal-picker-label">Registrar neste dia</div>
+        <div class="cal-picker-grid">
+          ${workouts.map(w=>{
+            const isActive = activeDayIds.includes(w.id);
+            const isLocked = realDayIds.includes(w.id);
+            return `<button class="cal-picker-btn ${isActive?'active':''} ${isLocked?'locked':''}"
+              ${isLocked?'':`onclick="toggleWorkoutForDate('${selectedCalendarDate}','${w.id}')"`}
+              ${isLocked?'title="Salvo via Salvar progresso — edite pela aba de treino"':''}>${escapeHtml(w.title)}${isLocked?' 🔒':''}</button>`;
+          }).join("")}
+          <button class="cal-picker-btn rest ${isRestNow?'active':''} ${hasAnyReal?'locked':''}"
+            ${hasAnyReal?'title="Já há treino salvo neste dia"':`onclick="toggleRestForDate('${selectedCalendarDate}')"`}>😴 Marcar como descanso</button>
+        </div>
+        <div class="small-note">Toque novamente em uma opção marcada para remover. Treinos salvos em "Salvar progresso" (🔒) só podem ser editados pela aba de treino.</div>
+      </div>`;
+    }
+  }
+
+  document.getElementById("app").innerHTML = `
+    <div class="cal-nav">
+      <button class="secondary" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month-label">${monthNames[month]} ${year}</div>
+      <button class="secondary" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-weekdays"><div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div></div>
+    <div class="cal-grid">${cells}</div>
+    ${detailHtml}
+  `;
+}
+
+function switchView(target) {
+  view = target;
+  if(view === "calendar" && !selectedCalendarDate){
+    calendarMonth = new Date();
+    selectedCalendarDate = dateKey(new Date());
+  }
+  updateHeaderButtons();
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function updateHeaderButtons() {
+  document.getElementById("workoutToggleBtn").classList.toggle("active-view", view === "workout");
+  document.getElementById("calToggleBtn").classList.toggle("active-view", view === "calendar");
+  document.getElementById("reportToggleBtn").classList.toggle("active-view", view === "report");
+}
+
+function changeMonth(delta) {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth()+delta, 1);
+  render();
+}
+
+function selectCalendarDate(dstr) {
+  selectedCalendarDate = (selectedCalendarDate === dstr) ? null : dstr;
+  render();
+}
+
+function toggleWorkoutForDate(dstr, dayId) {
+  const w = workouts.find(x => x.id === dayId);
+  if(!w) return;
+  const entries = history[dstr] || [];
+  const idx = entries.findIndex(e => !e.isRest && e.dayId === dayId);
+  if(idx >= 0){
+    if(entries[idx].exercises && entries[idx].exercises.length){
+      showToast("Esse treino foi salvo em 'Salvar progresso' — edite pela aba de treino.");
+      return;
+    }
+    entries.splice(idx,1);
+    if(entries.length) history[dstr] = entries; else delete history[dstr];
+    showToast("Removido do calendário");
+  } else {
+    const kept = entries.filter(e => !e.isRest);
+    kept.push({dayId:w.id, title:w.title, exercises:[], savedAt:new Date().toISOString()});
+    history[dstr] = kept;
+    showToast("Treino registrado ✓");
+  }
+  saveHistoryData();
+  render();
+}
+
+function toggleRestForDate(dstr) {
+  const entries = history[dstr] || [];
+  const hasReal = entries.some(e => e.exercises && e.exercises.length);
+  if(hasReal){
+    showToast("Já há treino salvo neste dia — não é possível marcar descanso.");
+    return;
+  }
+  const isRestNow = entries.length===1 && entries[0].isRest;
+  if(isRestNow){
+    delete history[dstr];
+    showToast("Removido do calendário");
+  } else {
+    history[dstr] = [{isRest:true, title:"Descanso", savedAt:new Date().toISOString()}];
+    showToast("Dia marcado como descanso ✓");
+  }
+  saveHistoryData();
+  render();
+}
+
+function selectDay(i) {
+  currentDay=i;
+  userPickedDay = true;
+  state.__lastTabDate = dateKey(new Date());
+  state.__lastTabIndex = i;
+  save();
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function getExerciseSets(ex) {
+  if(Array.isArray(ex.sets)) return ex.sets;
+  if(ex.weight !== undefined || ex.reps !== undefined) return [{weight:ex.weight, reps:ex.reps}];
+  return [];
+}
+
+function formatSets(ex) {
+  const sets = getExerciseSets(ex);
+  if(!sets.length) return "—";
+  return sets.map(st => `${st.weight?escapeHtml(st.weight)+'kg':'—'}×${st.reps?escapeHtml(st.reps):'—'}`).join(" · ");
+}
+
+function renderExerciseRow(ex) {
+  let html = `<div class="cal-ex-row">
+    <div class="cal-ex-name">${ex.isPB?'🔥 ':''}${escapeHtml(ex.name)}</div>
+    <div class="cal-ex-stats">${formatSets(ex)}</div>
+  </div>`;
+  if(ex.comment){
+    html += `<div class="cal-ex-comment">💬 ${escapeHtml(ex.comment)}</div>`;
+  }
+  return html;
+}
+
+function getPreviousBestWeight(exerciseName) {
+  let best = null;
+  Object.keys(history).forEach(dk => {
+    (history[dk]||[]).forEach(entry => {
+      (entry.exercises||[]).forEach(ex => {
+        if(ex.name === exerciseName){
+          getExerciseSets(ex).forEach(st => {
+            const w = parseFloat(String(st.weight).replace(",", "."));
+            if(!isNaN(w) && (best === null || w > best)) best = w;
+          });
+        }
+      });
+    });
+  });
+  return best;
+}
+
+function saveProgress() {
+  const w = workouts[currentDay];
+  const dk = dateKey(new Date());
+  if(!history[dk]) history[dk] = [];
+  const idx = history[dk].findIndex(entry => entry.dayId === w.id);
+  // Start from whatever was already saved for this workout today, so a
+  // correction to one exercise never erases the others.
+  const exerciseMap = {};
+  if(idx >= 0 && history[dk][idx].exercises){
+    history[dk][idx].exercises.forEach(ex => { exerciseMap[ex.name] = ex; });
+  }
+
+  w.sections.forEach((s,si)=>s.exercises.forEach((e,ei)=>{
+    const item = getItem(key(w.id,si,ei));
+    if(item.done){
+      const cleanSets = item.sets.filter(st => st.weight!=="" || st.reps!=="");
+      const setsToSave = cleanSets.length ? cleanSets : item.sets;
+      const prevBest = getPreviousBestWeight(e[0]);
+      const weightsThisSave = setsToSave
+        .map(st => parseFloat(String(st.weight).replace(",", ".")))
+        .filter(n => !isNaN(n));
+      const maxWeightThisSave = weightsThisSave.length ? Math.max(...weightsThisSave) : null;
+      const isPB = maxWeightThisSave !== null && prevBest !== null && maxWeightThisSave > prevBest;
+      exerciseMap[e[0]] = {name:e[0], muscle:e[1], comment:item.comment||"", sets:setsToSave, isPB};
+    }
+  }));
+
+  const doneExercises = Object.values(exerciseMap);
+  const cardio = getCardio(w.id);
+  const hasCardio = !!cardio.type;
+  if(doneExercises.length === 0 && !hasCardio){
+    showToast("Marque ao menos um exercício ou registre o cardio antes de salvar.");
+    return;
+  }
+  const anyPB = doneExercises.some(ex => ex.isPB);
+  const entry = {dayId:w.id, title:w.title, exercises:doneExercises, savedAt:new Date().toISOString(), hasPB:anyPB};
+  if(hasCardio) entry.cardio = {type:cardio.type, time:cardio.time};
+  else if(idx >= 0 && history[dk][idx].cardio) entry.cardio = history[dk][idx].cardio;
+  if(idx >= 0) history[dk][idx] = entry; else history[dk].push(entry);
+  saveHistoryData();
+
+  // Uncheck the boxes for next time, but keep the weights/sets/reps as a
+  // faded reminder of last time's numbers, until the person edits them.
+  w.sections.forEach((s,si)=>s.exercises.forEach((e,ei)=>{
+    const it = ensureItem(key(w.id,si,ei));
+    it.done = false;
+    it.stale = true;
+  }));
+  save();
+
+  // Jump straight to the next workout in the sequence.
+  currentDay = (currentDay + 1) % workouts.length;
+  userPickedDay = true;
+  state.__lastTabDate = dk;
+  state.__lastTabIndex = currentDay;
+  save();
+
+  showToast(anyPB ? "Progresso salvo — novo recorde pessoal! 🔥" : "Progresso salvo no calendário ✓");
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function setHeaderHeight() {
+  const h = document.querySelector("header").offsetHeight;
+  document.documentElement.style.setProperty("--header-h", h + "px");
+}
+window.addEventListener("resize", setHeaderHeight);
+window.addEventListener("orientationchange", setHeaderHeight);
+
+document.getElementById("today").textContent =
+  new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+setHeaderHeight();
+updateHeaderButtons();
+render();
+initFirebaseAuth();
+</script>
+</body>
+</html>

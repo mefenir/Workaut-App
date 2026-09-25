@@ -158,13 +158,15 @@ main { max-width:760px; margin:auto; padding:16px calc(14px + env(safe-area-inse
 .comment-wrap textarea {
   width:100%; margin-top:4px; border:1px solid #d9d9d9; border-radius:10px;
   padding:9px 10px; font-size:16px; background:#fafafa; font-family:inherit; resize:none;
+  color:var(--text);
 }
 .cal-ex-comment { font-size:11px; color:var(--muted); margin:-4px 0 8px 2px; font-style:italic; }
 label { font-size:11px; color:var(--muted); font-weight:700; display:block; }
 input[type=number] {
   width:100%; margin-top:4px; border:1px solid #d9d9d9; border-radius:10px;
-  padding:10px; font-size:16px; background:#fafafa;
+  padding:10px; font-size:16px; background:#fafafa; color:var(--text);
 }
+input, select, textarea { color:var(--text); }
 .actions { display:flex; gap:8px; margin:18px 0 0; }
 button {
   border:0; border-radius:11px; padding:11px 13px; font-weight:750;
@@ -285,6 +287,7 @@ button:disabled { opacity:.5; cursor:default; transform:none; }
 .reset-wrap { text-align:center; margin-top:24px; }
 .reset-btn { background:transparent; border:1px solid #eecccc; color:#b23b3b; font-size:12px; font-weight:700; padding:9px 14px; }
 .reset-confirm-box { background:#fdecec; border:1px solid #f3b8b8; border-radius:14px; padding:16px; text-align:left; }
+.plan-delete-confirm { margin:-4px 0 14px; }
 .reset-confirm-title { font-weight:800; font-size:15px; color:#8a1f1f; margin-bottom:6px; }
 .reset-confirm-text { font-size:13px; color:#8a1f1f; line-height:1.5; margin-bottom:14px; }
 .reset-confirm-actions { display:flex; gap:8px; }
@@ -319,6 +322,7 @@ button:disabled { opacity:.5; cursor:default; transform:none; }
 .cal-ex-row:last-child { border-bottom:none; }
 .cal-ex-main { flex:1; display:flex; justify-content:space-between; gap:10px; }
 .preview-eye { background:transparent; border:none; font-size:16px; padding:2px 4px; flex-shrink:0; }
+.preview-delete { color:#b23b3b; }
 .cal-ex-name { flex:1; }
 .cal-ex-stats { color:var(--muted); font-weight:700; white-space:nowrap; }
 .toast {
@@ -729,11 +733,22 @@ function setActivePlan(planId) {
   switchView("workout");
 }
 function selectPlanCard(planId) {
-  if(planId === state.activePlanId) return;
+  if(planId === state.activePlanId){
+    switchView("workout");
+    return;
+  }
   setActivePlan(planId);
 }
+let confirmingDeletePlanId = null;
+function askDeletePlan(planId) {
+  confirmingDeletePlanId = planId;
+  render();
+}
+function cancelDeletePlan() {
+  confirmingDeletePlanId = null;
+  render();
+}
 function deletePlan(planId) {
-  if(!confirm("Apagar este treino da lista? O histórico já registrado não é afetado.")) return;
   state.plans = state.plans.filter(p=>p.id!==planId);
   if(state.activePlanId === planId){
     state.activePlanId = state.plans.length ? state.plans[0].id : null;
@@ -741,7 +756,9 @@ function deletePlan(planId) {
     currentDay = 0;
     userPickedDay = false;
   }
+  confirmingDeletePlanId = null;
   save();
+  showToast("Treino apagado.");
   render();
 }
 
@@ -999,6 +1016,27 @@ function regenerateAutomated() {
   autoPreviewPlan = generateAutomatedPlan(autoDays, autoLevel, autoFocusGroup);
   render();
 }
+function previewSwapExercise(dayIdx, exIdx) {
+  const day = autoPreviewPlan.days[dayIdx];
+  const ex = day.sections[0].exercises[exIdx];
+  if(!ex) return;
+  const group = ex[1];
+  const usedNames = new Set();
+  autoPreviewPlan.days.forEach(d => d.sections[0].exercises.forEach(e => usedNames.add(e[0])));
+  const alternatives = (EXERCISE_LIBRARY[group]||[]).map(e=>e[0]).filter(n => n !== ex[0] && !usedNames.has(n));
+  if(!alternatives.length){
+    showToast("Não há outro exercício desse grupamento disponível na biblioteca.");
+    return;
+  }
+  const newName = alternatives[Math.floor(Math.random()*alternatives.length)];
+  const newLibId = libIdFor(group, newName);
+  day.sections[0].exercises[exIdx] = ex[3] ? [newName, group, newLibId, ex[3]] : [newName, group, newLibId];
+  render();
+}
+function previewDeleteExercise(dayIdx, exIdx) {
+  autoPreviewPlan.days[dayIdx].sections[0].exercises.splice(exIdx, 1);
+  render();
+}
 function discardAutomatedPreview() {
   autoPreviewPlan = null;
   view = "automatedForm";
@@ -1027,18 +1065,23 @@ function renderAutomatedPreviewView() {
     <div class="day-title">${escapeHtml(plan.name)}</div>
     <div class="day-focus">Confira o plano antes de confirmar. Se quiser outra combinação, gere de novo.</div>
   `;
-  plan.days.forEach(day => {
+  plan.days.forEach((day, dayIdx) => {
     html += `<div class="report-day"><div class="report-day-header" style="cursor:default;"><div>
       <div class="report-day-date">${escapeHtml(day.title)}</div>
       <div class="report-day-titles">${escapeHtml(day.focus)}</div>
     </div></div><div class="report-day-body" style="display:block;">`;
-    day.sections[0].exercises.forEach(ex => {
+    day.sections[0].exercises.forEach((ex, exIdx) => {
       html += `<div class="cal-ex-row">
         <div class="cal-ex-main"><div class="cal-ex-name">${escapeHtml(ex[0])}</div><div class="cal-ex-stats">${escapeHtml(ex[1])}</div></div>
         ${ex[2]?`<button class="preview-eye" onclick="openExerciseDetail(${attrJSON(ex[0])},${attrJSON(ex[1])},${attrJSON(ex[2])},'automatedPreview')" title="Ver imagem">🖼️</button>`:''}
+        <button class="preview-eye" onclick="previewSwapExercise(${dayIdx},${exIdx})" title="Trocar por outro exercício do mesmo grupamento">🔄</button>
+        <button class="preview-eye preview-delete" onclick="previewDeleteExercise(${dayIdx},${exIdx})" title="Remover este exercício">🗑️</button>
       </div>`;
       if(ex[3]) html += `<div class="cal-ex-comment">⏱️ ${escapeHtml(ex[3])}</div>`;
     });
+    if(!day.sections[0].exercises.length){
+      html += `<div class="small-note">Nenhum exercício neste dia. Toque em "🔀 Gerar outro" ou volte e ajuste.</div>`;
+    }
     html += `</div></div>`;
   });
   html += `
@@ -1250,13 +1293,24 @@ function renderMyPlansView() {
   }
   validPlans.forEach(plan => {
     const isActive = plan.id === state.activePlanId;
+    const isConfirming = confirmingDeletePlanId === plan.id;
     html += `<div class="plan-card ${isActive?'active':''}">
       <div class="plan-card-info" onclick="selectPlanCard('${plan.id}')">
         <div class="plan-card-name">${escapeHtml(plan.name||"Treino sem nome")}${isActive?' ✓':''}</div>
         <div class="plan-card-days">${plan.days.length} dia${plan.days.length>1?'s':''}: ${plan.days.map(d=>escapeHtml(d.title||"")).join(", ")}</div>
       </div>
-      <button class="plan-card-delete" onclick="deletePlan('${plan.id}')">🗑️</button>
+      <button class="plan-card-delete" onclick="askDeletePlan('${plan.id}')">🗑️</button>
     </div>`;
+    if(isConfirming){
+      html += `<div class="reset-confirm-box plan-delete-confirm">
+        <div class="reset-confirm-title">Apagar "${escapeHtml(plan.name||"este treino")}"?</div>
+        <div class="reset-confirm-text">${validPlans.length<=1?'Esse é o seu único treino — depois de apagado, sua aba de treino fica vazia até você criar outro. ':''}<strong>Essa ação não pode ser desfeita.</strong> O histórico já registrado não é afetado.</div>
+        <div class="reset-confirm-actions">
+          <button class="secondary" onclick="cancelDeletePlan()">Cancelar</button>
+          <button class="reset-btn-confirm" onclick="deletePlan('${plan.id}')">Sim, apagar</button>
+        </div>
+      </div>`;
+    }
   });
   html += `<button class="add-set-btn" onclick="openCreateChoice()">+ Criar novo treino</button>`;
   document.getElementById("app").innerHTML = html;
@@ -1836,33 +1890,51 @@ function showToast(msg) {
 }
 
 function render() {
-  if(view === "calendar") { renderCalendarView(); }
-  else if(view === "report") { renderReportView(); }
-  else if(view === "builder") { renderBuilderView(); }
-  else if(view === "myplans") { renderMyPlansView(); }
-  else if(view === "exercise-detail") { renderExerciseDetailView(); }
-  else if(view === "admin") { renderAdminView(); }
-  else if(view === "createChoice") { renderCreateChoiceView(); }
-  else if(view === "automatedForm") { renderAutomatedFormView(); }
-  else if(view === "automatedPreview") { renderAutomatedPreviewView(); }
-  else { renderWorkoutView(); }
-  setHeaderHeight();
+  try {
+    if(view === "calendar") { renderCalendarView(); }
+    else if(view === "report") { renderReportView(); }
+    else if(view === "builder") { renderBuilderView(); }
+    else if(view === "myplans") { renderMyPlansView(); }
+    else if(view === "exercise-detail") { renderExerciseDetailView(); }
+    else if(view === "admin") { renderAdminView(); }
+    else if(view === "createChoice") { renderCreateChoiceView(); }
+    else if(view === "automatedForm") { renderAutomatedFormView(); }
+    else if(view === "automatedPreview") { renderAutomatedPreviewView(); }
+    else { renderWorkoutView(); }
+  } catch(e) {
+    // Never leave the previous screen silently frozen — show something
+    // and say so, instead of looking like the tap did nothing.
+    console.error("Render error:", e);
+    document.getElementById("app").innerHTML = `
+      <div class="empty-plan">
+        <div class="empty-plan-title">Algo deu errado ao mostrar esta tela</div>
+        <div class="empty-plan-text">Tente novamente. Se continuar, volte para o Treino.</div>
+        <button class="primary" onclick="switchView('workout')">🏋️ Ir para o Treino</button>
+      </div>
+    `;
+    showToast("Ocorreu um erro ao carregar a tela.");
+  }
+  try { setHeaderHeight(); } catch(e) {}
 }
 
 function renderTabs() {
-  const nextIdx = getNextWorkoutIndex();
-  document.getElementById("tabs").innerHTML = workouts.map((w,i) =>
-    `<button class="tab ${i===currentDay?'active':''}" onclick="selectDay(${i})">${i+1}. ${w.short}${i===nextIdx?'<span class="next-dot" title="Próximo da sequência"></span>':''}</button>`
-  ).join("");
-  centerActiveTab();
+  try {
+    const nextIdx = getNextWorkoutIndex();
+    document.getElementById("tabs").innerHTML = workouts.map((w,i) =>
+      `<button class="tab ${i===currentDay?'active':''}" onclick="selectDay(${i})">${i+1}. ${w.short}${i===nextIdx?'<span class="next-dot" title="Próximo da sequência"></span>':''}</button>`
+    ).join("");
+    centerActiveTab();
+  } catch(e) { /* the day tabs are secondary — never let this hide the main content */ }
 }
 
 function centerActiveTab() {
-  const tabsEl = document.getElementById("tabs");
-  const activeEl = tabsEl.querySelector(".tab.active");
-  if(!activeEl) return;
-  const target = activeEl.offsetLeft - (tabsEl.clientWidth/2) + (activeEl.clientWidth/2);
-  tabsEl.scrollTo({left: Math.max(0,target), behavior:"smooth"});
+  try {
+    const tabsEl = document.getElementById("tabs");
+    const activeEl = tabsEl.querySelector(".tab.active");
+    if(!activeEl) return;
+    const target = activeEl.offsetLeft - (tabsEl.clientWidth/2) + (activeEl.clientWidth/2);
+    tabsEl.scrollTo({left: Math.max(0,target), behavior:"smooth"});
+  } catch(e) { /* purely cosmetic — never let this block the rest of the render */ }
 }
 
 function renderWorkoutView() {
@@ -1878,7 +1950,6 @@ function renderWorkoutView() {
     return;
   }
   document.getElementById("tabs").style.display = "flex";
-  renderTabs();
   const w = workouts[currentDay];
   let total=0, done=0;
 
@@ -1964,6 +2035,7 @@ function renderWorkoutView() {
     <div class="small-note">Marque os exercícios feitos e toque em "Salvar progresso" para registrar no calendário.</div>
   `;
   document.getElementById("app").innerHTML = html;
+  renderTabs();
 }
 
 function classifyMuscle(raw) {
@@ -2399,9 +2471,10 @@ function saveProgress() {
   state.__lastTabIndex = currentDay;
   save();
 
-  showToast(anyPB ? "Progresso salvo — novo recorde pessoal! 🔥" : "Progresso salvo no calendário ✓");
-  render();
-  window.scrollTo({top:0,behavior:"smooth"});
+  showToast(anyPB ? "Novo recorde pessoal! 🔥 Muito bem! Continue assim." : "Muito bem! Continue assim.");
+  calendarMonth = new Date();
+  selectedCalendarDate = dk;
+  switchView("calendar");
 }
 
 function setHeaderHeight() {

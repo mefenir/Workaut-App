@@ -733,11 +733,10 @@ function selectPlanCard(planId) {
   setActivePlan(planId);
 }
 function deletePlan(planId) {
-  if(state.plans.length <= 1){ showToast("Você precisa ter ao menos um treino."); return; }
   if(!confirm("Apagar este treino da lista? O histórico já registrado não é afetado.")) return;
   state.plans = state.plans.filter(p=>p.id!==planId);
   if(state.activePlanId === planId){
-    state.activePlanId = state.plans[0].id;
+    state.activePlanId = state.plans.length ? state.plans[0].id : null;
     syncWorkoutsFromActivePlan();
     currentDay = 0;
     userPickedDay = false;
@@ -1256,7 +1255,7 @@ function renderMyPlansView() {
         <div class="plan-card-name">${escapeHtml(plan.name||"Treino sem nome")}${isActive?' ✓':''}</div>
         <div class="plan-card-days">${plan.days.length} dia${plan.days.length>1?'s':''}: ${plan.days.map(d=>escapeHtml(d.title||"")).join(", ")}</div>
       </div>
-      ${validPlans.length>1?`<button class="plan-card-delete" onclick="deletePlan('${plan.id}')">🗑️</button>`:''}
+      <button class="plan-card-delete" onclick="deletePlan('${plan.id}')">🗑️</button>
     </div>`;
   });
   html += `<button class="add-set-btn" onclick="openCreateChoice()">+ Criar novo treino</button>`;

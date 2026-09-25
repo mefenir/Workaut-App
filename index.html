@@ -30,8 +30,8 @@ button, .tab, input, a { touch-action:manipulation; }
 header {
   background:#111; color:white;
   padding:calc(20px + env(safe-area-inset-top,0px)) calc(18px + env(safe-area-inset-right,0px)) 18px calc(18px + env(safe-area-inset-left,0px));
-  position:sticky; top:0; z-index:10;
 }
+#stickyHead { position:sticky; top:0; z-index:10; }
 .header-row { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
 .auth-screen {
   min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center;
@@ -60,7 +60,16 @@ header {
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   font-size:12px; color:#bbb; padding-top:4px;
 }
+.auth-user-bar-actions { display:flex; align-items:center; gap:10px; }
 .auth-logout { background:transparent; border:none; color:#ddd; text-decoration:underline; padding:2px 4px; font-weight:700; font-size:12px; }
+.auth-admin-btn { background:transparent; border:1px solid #444; color:#ffd97a; padding:3px 9px; font-weight:700; font-size:11px; border-radius:999px; }
+.admin-row {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:white; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px;
+}
+.admin-row-email { font-size:13px; font-weight:700; word-break:break-all; }
+.admin-approve-btn, .admin-revoke-btn { flex-shrink:0; padding:8px 14px; font-size:12px; }
+.admin-revoke-btn { color:#b23b3b; border-color:#eecccc; }
 h1 { font-size:24px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
 .subtitle { color:#aaa; font-size:13px; }
 .date { margin-top:14px; font-size:13px; color:#ccc; }
@@ -68,7 +77,6 @@ h1 { font-size:24px; margin:0 0 4px; display:flex; align-items:center; gap:8px; 
   display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
   padding:12px calc(14px + env(safe-area-inset-right,0px)) 12px calc(14px + env(safe-area-inset-left,0px));
   background:white; border-bottom:1px solid var(--line);
-  position:sticky; top:var(--header-h); z-index:9;
   scrollbar-width:none;
 }
 .tabs::-webkit-scrollbar { display:none; }
@@ -344,7 +352,20 @@ button {
   </div>
 </div>
 
+<div id="approvalScreen" class="auth-screen" style="display:none">
+  <div class="auth-card">
+    <h1>Conta criada 🎉</h1>
+    <div class="subtitle">Sua conta foi criada com sucesso. O Workaut ainda está em <strong>versão beta</strong>, então o acesso é liberado manualmente pelo administrador. Assim que sua conta for aprovada, você já poderá entrar normalmente por aqui.</div>
+    <div id="approvalError" class="auth-error" style="display:none"></div>
+    <div class="auth-actions">
+      <button class="primary" onclick="checkApprovalNow()">Verificar novamente</button>
+    </div>
+    <div class="auth-hint"><a href="#" onclick="authLogout();return false;">Sair / usar outra conta</a></div>
+  </div>
+</div>
+
 <div id="appRoot" style="display:none">
+<div id="stickyHead">
 <header>
   <div class="header-row">
     <div>
@@ -361,6 +382,7 @@ button {
 </header>
 
 <nav class="tabs" id="tabs"></nav>
+</div>
 <main id="app"></main>
 </div>
 
@@ -1030,8 +1052,10 @@ function initFirebaseAuth() {
 function handleAuthUser(user) {
   if(user && !user.emailVerified){
     fbUser = null;
+    stopApprovalListener();
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("verifyScreen").style.display = "flex";
+    document.getElementById("approvalScreen").style.display = "none";
     document.getElementById("appRoot").style.display = "none";
     document.getElementById("authUserBar").style.display = "none";
     document.getElementById("verifyEmailAddr").textContent = user.email || "";
@@ -1041,18 +1065,110 @@ function handleAuthUser(user) {
   if(user){
     fbUser = user;
     document.getElementById("authScreen").style.display = "none";
-    document.getElementById("appRoot").style.display = "";
-    setHeaderHeight();
-    const bar = document.getElementById("authUserBar");
-    bar.style.display = "flex";
-    bar.innerHTML = `<span>${escapeHtml(user.email||"")}</span><button class="auth-logout" onclick="authLogout()">Sair</button>`;
-    loadFromFirestore();
+    if(user.email === ADMIN_EMAIL){
+      enterApp();
+    } else {
+      watchApproval(user);
+    }
   } else {
     fbUser = null;
+    stopApprovalListener();
     document.getElementById("authScreen").style.display = "flex";
+    document.getElementById("approvalScreen").style.display = "none";
     document.getElementById("appRoot").style.display = "none";
     document.getElementById("authUserBar").style.display = "none";
   }
+}
+
+function enterApp() {
+  document.getElementById("approvalScreen").style.display = "none";
+  document.getElementById("appRoot").style.display = "";
+  setHeaderHeight();
+  const bar = document.getElementById("authUserBar");
+  bar.style.display = "flex";
+  const isAdmin = fbUser.email === ADMIN_EMAIL;
+  bar.innerHTML = `<span>${escapeHtml(fbUser.email||"")}</span>
+    <span class="auth-user-bar-actions">
+      ${isAdmin?'<button class="auth-admin-btn" onclick="switchView(\'admin\')">👑 Admin</button>':''}
+      <button class="auth-logout" onclick="authLogout()">Sair</button>
+    </span>`;
+  loadFromFirestore();
+}
+
+// ---- Beta access approval ----
+const ADMIN_EMAIL = "theworkautapp@gmail.com";
+let approvalUnsub = null;
+
+function stopApprovalListener() {
+  if(approvalUnsub){ approvalUnsub(); approvalUnsub = null; }
+}
+
+function watchApproval(user) {
+  const ref = fb.db.collection("approvals").doc(user.uid);
+  stopApprovalListener();
+  approvalUnsub = ref.onSnapshot(snap => {
+    if(!snap.exists){
+      ref.set({ approved:false, email:user.email, requestedAt: new Date().toISOString() }).catch(()=>{});
+      return; // onSnapshot will fire again once the doc exists
+    }
+    const data = snap.data();
+    if(data.approved){
+      enterApp();
+    } else {
+      document.getElementById("authScreen").style.display = "none";
+      document.getElementById("appRoot").style.display = "none";
+      document.getElementById("authUserBar").style.display = "none";
+      document.getElementById("approvalScreen").style.display = "flex";
+    }
+  }, () => {
+    // permission or offline error — show the waiting screen rather than nothing
+    document.getElementById("approvalScreen").style.display = "flex";
+  });
+}
+function checkApprovalNow() {
+  // onSnapshot already keeps this live; this button is mainly reassurance.
+  showToast("Ainda não foi aprovado. Você será avisado automaticamente quando liberar.");
+}
+
+// ---- Admin panel ----
+function renderAdminView() {
+  document.getElementById("tabs").style.display = "none";
+  document.getElementById("app").innerHTML = `<div class="day-title">Painel admin</div><div class="day-focus">Carregando pedidos de acesso...</div>`;
+  fb.db.collection("approvals").get().then(snap => {
+    const pending = [];
+    const approved = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      (d.approved ? approved : pending).push({ uid: doc.id, ...d });
+    });
+    let html = `<div class="day-title">Painel admin</div><div class="day-focus">Aprove o acesso de novas contas à versão beta do Workaut.</div>`;
+    html += `<div class="section-title">Aguardando aprovação (${pending.length})</div>`;
+    html += pending.length ? pending.map(p => `
+      <div class="admin-row">
+        <div class="admin-row-email">${escapeHtml(p.email||p.uid)}</div>
+        <button class="primary admin-approve-btn" onclick="approveUser('${p.uid}')">Aprovar</button>
+      </div>`).join("") : `<div class="small-note">Nenhum pedido pendente.</div>`;
+    html += `<div class="section-title">Aprovados (${approved.length})</div>`;
+    html += approved.length ? approved.map(p => `
+      <div class="admin-row">
+        <div class="admin-row-email">${escapeHtml(p.email||p.uid)}</div>
+        <button class="secondary admin-revoke-btn" onclick="revokeUser('${p.uid}')">Revogar</button>
+      </div>`).join("") : `<div class="small-note">Ninguém aprovado ainda.</div>`;
+    document.getElementById("app").innerHTML = html;
+  }).catch(() => {
+    document.getElementById("app").innerHTML = `<div class="day-title">Painel admin</div><div class="small-note">Não foi possível carregar a lista (verifique as regras do Firestore).</div>`;
+  });
+}
+function approveUser(uid) {
+  fb.db.collection("approvals").doc(uid).update({ approved:true, approvedAt: new Date().toISOString() })
+    .then(() => { showToast("Acesso aprovado ✓"); renderAdminView(); })
+    .catch(() => showToast("Erro ao aprovar. Tente de novo."));
+}
+function revokeUser(uid) {
+  if(!confirm("Revogar o acesso dessa conta? Ela vai voltar para a tela de espera.")) return;
+  fb.db.collection("approvals").doc(uid).update({ approved:false })
+    .then(() => { showToast("Acesso revogado."); renderAdminView(); })
+    .catch(() => showToast("Erro ao revogar. Tente de novo."));
 }
 
 async function loadFromFirestore() {
@@ -1164,6 +1280,7 @@ function authReset() {
     .catch(e => showAuthError(translateAuthError(e)));
 }
 function authLogout() {
+  stopApprovalListener();
   if(fb) fb.auth.signOut();
 }
 
@@ -1263,6 +1380,7 @@ function render() {
   else if(view === "builder") { renderBuilderView(); }
   else if(view === "myplans") { renderMyPlansView(); }
   else if(view === "exercise-detail") { renderExerciseDetailView(); }
+  else if(view === "admin") { renderAdminView(); }
   else { renderWorkoutView(); }
   setHeaderHeight();
 }

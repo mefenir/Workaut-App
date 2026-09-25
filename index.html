@@ -94,6 +94,10 @@ h1 { font-size:24px; margin:0 0 4px; display:flex; align-items:center; gap:8px; 
 main { max-width:760px; margin:auto; padding:16px calc(14px + env(safe-area-inset-right,0px)) 40px calc(14px + env(safe-area-inset-left,0px)); }
 .day-title { font-size:25px; font-weight:800; margin:6px 0 2px; }
 .day-focus { color:var(--muted); margin-bottom:16px; }
+.empty-plan { text-align:center; padding:40px 12px; }
+.empty-plan-title { font-size:19px; font-weight:800; margin-bottom:8px; }
+.empty-plan-text { color:var(--muted); font-size:14px; margin-bottom:22px; line-height:1.5; }
+.empty-plan .primary { padding:13px 22px; }
 .progress-wrap {
   background:white; border:1px solid var(--line); border-radius:14px;
   padding:12px 14px; margin-bottom:14px;
@@ -125,6 +129,7 @@ main { max-width:760px; margin:auto; padding:16px calc(14px + env(safe-area-inse
 .name-wrap { flex:1 1 auto; min-width:0; }
 .name { font-weight:750; font-size:16px; line-height:1.25; }
 .muscle { color:var(--muted); font-size:12px; margin-top:3px; }
+.locked-rest-note { color:#a5620f; font-size:11px; font-weight:700; margin-top:3px; }
 .howto {
   flex:0 0 auto; background:#f2f2f2; border:1px solid var(--line);
   border-radius:999px; padding:8px 12px; font-size:12px; font-weight:700;
@@ -196,7 +201,6 @@ button {
 .muscle-label { flex:0 0 118px; font-weight:700; color:var(--text); }
 .muscle-bar-wrap { flex:1; background:#eee; border-radius:99px; height:10px; overflow:hidden; }
 .muscle-bar { height:100%; background:#111; border-radius:99px; }
-.muscle-count { flex:0 0 22px; text-align:right; font-weight:800; color:var(--muted); font-size:12px; }
 .report-day { background:white; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; overflow:hidden; }
 .report-day-header {
   width:100%; display:flex; justify-content:space-between; align-items:center;
@@ -217,6 +221,14 @@ button {
 .builder-remove-day { background:transparent; border:none; color:#b23b3b; font-size:11px; font-weight:700; padding:2px 4px; }
 .chip-grid { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; margin-bottom:12px; }
 .chip { border:1px solid var(--line); background:#fafafa; border-radius:999px; padding:7px 12px; font-size:12px; font-weight:700; color:#555; }
+.chip-disabled { opacity:.5; }
+.auto-slider { width:100%; margin:10px 0 4px; }
+.create-choice-grid { display:flex; flex-direction:column; gap:12px; margin-top:16px; }
+.create-choice-card { background:white; border:1px solid var(--line); border-radius:16px; padding:20px; text-align:center; }
+.create-choice-card:active { background:#f5f5f5; }
+.create-choice-emoji { font-size:32px; margin-bottom:8px; }
+.create-choice-title { font-weight:800; font-size:17px; margin-bottom:4px; }
+.create-choice-text { color:var(--muted); font-size:13px; line-height:1.4; }
 .chip.active { background:#111; color:white; border-color:#111; }
 .builder-ex-list { margin-top:12px; }
 .builder-ex-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line); }
@@ -298,8 +310,10 @@ button {
   margin:12px 0 6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;
 }
 .cal-detail-workout:first-child { margin-top:0; }
-.cal-ex-row { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.cal-ex-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:14px; }
 .cal-ex-row:last-child { border-bottom:none; }
+.cal-ex-main { flex:1; display:flex; justify-content:space-between; gap:10px; }
+.preview-eye { background:transparent; border:none; font-size:16px; padding:2px 4px; flex-shrink:0; }
 .cal-ex-name { flex:1; }
 .cal-ex-stats { color:var(--muted); font-weight:700; white-space:nowrap; }
 .toast {
@@ -496,7 +510,7 @@ const DEFAULT_WORKOUTS = [
 
 let workouts = DEFAULT_WORKOUTS; // points at the active plan's days once state loads
 
-const MUSCLE_GROUPS = ["Ombros","Peito","Costas","Bíceps","Tríceps","Perna","Abdômen","Antebraço/Trapézio","Cardio"];
+const MUSCLE_GROUPS = ["Peito","Costas","Ombros","Bíceps","Tríceps","Abdômen","Perna"];
 const EX_IMG_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 
 // Curated from free-exercise-db (github.com/yuhonas/free-exercise-db), public domain (Unlicense).
@@ -513,7 +527,11 @@ const EXERCISE_LIBRARY = {
     ["Machine Chest Fly", null],
     ["Cable Chest Press", null],
     ["Cable Crossover", null],
-    ["Cable Iron Cross", null]
+    ["Cable Iron Cross", null],
+    ["Decline Barbell Bench Press", null],
+    ["Decline Dumbbell Bench Press", null],
+    ["Decline Push-Up", null],
+    ["Low-to-High Cable Fly", null]
   ],
   "Tríceps": [
     ["Band Skull Crusher","Band_Skull_Crusher"],
@@ -526,7 +544,11 @@ const EXERCISE_LIBRARY = {
     ["Cable Incline Triceps Extension", null],
     ["Cable Lying Triceps Extension", null],
     ["Cable One Arm Tricep Extension", null],
-    ["Cable Rope Overhead Triceps Extension", null]
+    ["Cable Rope Overhead Triceps Extension", null],
+    ["Tricep Pushdown (Rope)", null],
+    ["Tricep Pushdown (Bar)", null],
+    ["Overhead Dumbbell Triceps Extension", null],
+    ["Close-Grip Bench Press", null]
   ],
   "Bíceps": [
     ["Alternate Hammer Curl","Alternate_Hammer_Curl"],
@@ -534,7 +556,16 @@ const EXERCISE_LIBRARY = {
     ["Barbell Curl","Barbell_Curl"],
     ["Barbell Curls Lying Against An Incline","Barbell_Curls_Lying_Against_An_Incline"],
     ["Cable Hammer Curls (Rope Attachment)", null],
-    ["Cable Preacher Curl", null]
+    ["Cable Preacher Curl", null],
+    ["Concentration Curl", null],
+    ["Seated Dumbbell Curl", null],
+    ["Zottman Curl", null],
+    ["EZ-Bar Curl", null],
+    ["Cable Wrist Curl", null],
+    ["Reverse Wrist Curl", null],
+    ["Wrist Roller", null],
+    ["Farmer's Walk", null],
+    ["Bottoms-Up Clean From The Hang Position", "Bottoms-Up_Clean_From_The_Hang_Position"]
   ],
   "Costas": [
     ["Alternating Kettlebell Row","Alternating_Kettlebell_Row"],
@@ -552,7 +583,11 @@ const EXERCISE_LIBRARY = {
     ["Axle Deadlift","Axle_Deadlift"],
     ["Barbell Deadlift","Barbell_Deadlift"],
     ["Cable Deadlifts", null],
-    ["Cable Incline Pushdown", null]
+    ["Cable Incline Pushdown", null],
+    ["Barbell Shrug", null],
+    ["Barbell Shrug Behind The Back", null],
+    ["Cable Shrugs", null],
+    ["Dumbbell Shrug", null]
   ],
   "Ombros": [
     ["Alternating Cable Shoulder Press","Alternating_Cable_Shoulder_Press"],
@@ -632,41 +667,52 @@ const EXERCISE_LIBRARY = {
     ["Cable Reverse Crunch", null],
     ["Cable Russian Twists", null],
     ["Cable Seated Crunch", null]
-  ],
-  "Antebraço/Trapézio": [
-    ["Barbell Shrug","Barbell_Shrug"],
-    ["Barbell Shrug Behind The Back","Barbell_Shrug_Behind_The_Back"],
-    ["Bottoms-Up Clean From The Hang Position","Bottoms-Up_Clean_From_The_Hang_Position"],
-    ["Cable Shrugs", null],
-    ["Cable Wrist Curl", null],
-    ["Calf-Machine Shoulder Shrug", null]
-  ],
-  "Cardio": [
-    ["Corrida", null],
-    ["Caminhada", null],
-    ["Bicicleta", "Bicycling"],
-    ["Bicicleta ergométrica", "Bicycling_Stationary"],
-    ["Elíptico", null],
-    ["Pular corda", null],
-    ["Escada / Step", null]
   ]
 };
 
-function ensurePlans() {
-  if(!state.plans || !state.plans.length){
-    state.plans = [{ id:"plan_default", name:"Meu treino de 5 dias", days: DEFAULT_WORKOUTS }];
-    state.activePlanId = "plan_default";
+// Manually curated portion tagging (by exercise name) so the automated
+// generator can balance a day across the different portions of a muscle
+// (e.g. a shoulder day hitting front/side/rear delts, not just one).
+// Only curated for groups where this matters most: Peito, Ombros, Perna.
+const EXERCISE_PORTIONS = {
+  "Peito": {
+    "superior": ["Barbell Incline Bench Press - Medium Grip"],
+    "medio": ["Barbell Bench Press - Medium Grip","Barbell Guillotine Bench Press","Bench Press - With Bands","Bodyweight Flyes","Alternating Floor Press","Around The Worlds","Machine Chest Fly","Cable Chest Press","Cable Crossover","Cable Iron Cross","Bent-Arm Dumbbell Pullover"],
+    "inferior": ["Decline Barbell Bench Press","Decline Dumbbell Bench Press","Decline Push-Up","Low-to-High Cable Fly"]
+  },
+  "Ombros": {
+    "anterior": ["Alternating Cable Shoulder Press","Alternating Kettlebell Press","Arnold Dumbbell Press","Barbell Shoulder Press","Cable Shoulder Press","Barbell Incline Shoulder Raise"],
+    "lateral": ["Alternating Deltoid Raise","Cable Seated Lateral Raise","Battling Ropes"],
+    "posterior": ["Band Pull Apart","Barbell Rear Delt Row","Bent Over Dumbbell Rear Delt Raise With Head On Bench","Bent Over Low-Pulley Side Lateral","Back Flyes - With Bands","Cable Rear Delt Fly","Cable Rope Rear-Delt Rows","Backward Medicine Ball Throw"]
+  },
+  "Perna": {
+    "quadriceps": ["Barbell Full Squat","Barbell Hack Squat","Barbell Lunge","Barbell Side Split Squat","Barbell Squat","Barbell Squat To A Bench","Barbell Step Ups","Barbell Walking Lunge","Bodyweight Squat","Bodyweight Walking Lunge","Box Squat","Box Squat with Bands","Box Squat with Chains","Balance Board","Alternate Leg Diagonal Bound"],
+    "posterior_coxa": ["Ball Leg Curl","Band Good Morning","Band Good Morning (Pull Through)","Alternating Hang Clean","Backward Drag"],
+    "gluteos": ["Barbell Glute Bridge","Barbell Hip Thrust","Butt Lift (Bridge)","Cable Hip Adduction","Band Hip Adductions"],
+    "panturrilha": ["Barbell Seated Calf Raise","Calf Press","Calf Press On The Leg Press Machine","Calf Raise On A Dumbbell","Calf Raises - With Bands"]
   }
-  if(!state.activePlanId || !state.plans.find(p=>p.id===state.activePlanId)){
-    state.activePlanId = state.plans[0].id;
+};
+
+function ensurePlans() {
+  if(!state.plans){
+    state.plans = [];
+  }
+  if(state.plans.length){
+    if(!state.activePlanId || !state.plans.find(p=>p.id===state.activePlanId)){
+      state.activePlanId = state.plans[0].id;
+    }
+  } else {
+    state.activePlanId = null;
   }
   syncWorkoutsFromActivePlan();
 }
 function getActivePlan() {
+  if(!state.plans || !state.plans.length) return null;
   return state.plans.find(p=>p.id===state.activePlanId) || state.plans[0];
 }
 function syncWorkoutsFromActivePlan() {
-  workouts = getActivePlan().days;
+  const plan = getActivePlan();
+  workouts = plan ? plan.days : [];
   if(currentDay >= workouts.length) currentDay = 0;
 }
 function setActivePlan(planId) {
@@ -693,6 +739,295 @@ function deletePlan(planId) {
   }
   save();
   render();
+}
+
+// ---- Automated plan generator ----
+function shuffled(arr) {
+  const a = arr.slice();
+  for(let i=a.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function libIdFor(group, name) {
+  const entry = (EXERCISE_LIBRARY[group]||[]).find(e => e[0] === name);
+  return entry ? entry[1] : null;
+}
+function pickFromGroup(group, count, used) {
+  const pool = (EXERCISE_LIBRARY[group]||[]).map(e=>e[0]).filter(n => !used.has(n));
+  const chosen = shuffled(pool).slice(0, count);
+  chosen.forEach(n => used.add(n));
+  return chosen.map(n => [n, group, libIdFor(group,n)]);
+}
+function pickBalanced(group, count, used) {
+  const portions = EXERCISE_PORTIONS[group];
+  if(!portions) return pickFromGroup(group, count, used);
+  const portionNames = Object.keys(portions);
+  const result = [];
+  let i = 0;
+  // Round-robin across portions so a shoulder/chest/leg day always covers
+  // its different portions instead of stacking exercises from just one.
+  while(result.length < count && i < count*portionNames.length + portionNames.length){
+    const portion = portionNames[i % portionNames.length];
+    const pool = portions[portion].filter(n => !used.has(n));
+    if(pool.length){
+      const pick = shuffled(pool)[0];
+      used.add(pick);
+      result.push([pick, group, libIdFor(group,pick)]);
+    }
+    i++;
+  }
+  return result;
+}
+function pickExercises(group, count, used) {
+  if(count <= 0) return [];
+  return EXERCISE_PORTIONS[group] ? pickBalanced(group, count, used) : pickFromGroup(group, count, used);
+}
+function addRestNotes(exList, note) {
+  return exList.map(e => [e[0], e[1], e[2], note]);
+}
+function dayFromSpec(spec, used, restNote, extraGroup) {
+  // spec: { label, groups: [{group, count}, ...] }
+  let exercises = [];
+  spec.groups.forEach(g => {
+    let count = g.count;
+    if(extraGroup && g.group === extraGroup) count += 2;
+    exercises = exercises.concat(pickExercises(g.group, count, used));
+  });
+  if(restNote) exercises = addRestNotes(exercises, restNote);
+  const muscleGroups = spec.groups.map(g=>g.group);
+  return {
+    title: spec.label,
+    short: spec.label.split(" ")[0].slice(0,10),
+    focus: muscleGroups.join(", "),
+    sections: [ { name:"", exercises } ]
+  };
+}
+
+const GOD_MODE_REST_NOTE = "Descanso: 45s entre séries (fixo)";
+
+function rookieTemplate() {
+  return [
+    { label:"Full Body A", groups:[{group:"Peito",count:1},{group:"Costas",count:1},{group:"Perna",count:2},{group:"Ombros",count:1},{group:"Abdômen",count:1}] },
+    { label:"Full Body B", groups:[{group:"Peito",count:1},{group:"Costas",count:1},{group:"Perna",count:2},{group:"Ombros",count:1},{group:"Abdômen",count:1}] }
+  ];
+}
+function normalTemplate() {
+  return [
+    { label:"Push", groups:[{group:"Peito",count:3},{group:"Ombros",count:2},{group:"Tríceps",count:2}] },
+    { label:"Pull", groups:[{group:"Costas",count:5},{group:"Bíceps",count:2}] },
+    { label:"Legs", groups:[{group:"Perna",count:6},{group:"Abdômen",count:1}] }
+  ];
+}
+function advancedTemplate() {
+  return [
+    { label:"A: Peito + Ombro", groups:[{group:"Peito",count:4},{group:"Ombros",count:3}] },
+    { label:"B: Costas", groups:[{group:"Costas",count:6}] },
+    { label:"C: Perna", groups:[{group:"Perna",count:7},{group:"Abdômen",count:2}] },
+    { label:"D: Ombro + Costas", groups:[{group:"Ombros",count:3},{group:"Costas",count:3}] },
+    { label:"E: Braços", groups:[{group:"Bíceps",count:4},{group:"Tríceps",count:3}] }
+  ];
+}
+function godTemplate() {
+  return [
+    { label:"A: Peito + Ombro", groups:[{group:"Peito",count:5},{group:"Ombros",count:4}] },
+    { label:"B: Costas", groups:[{group:"Costas",count:7}] },
+    { label:"C: Perna", groups:[{group:"Perna",count:8},{group:"Abdômen",count:4}] },
+    { label:"D: Ombro + Costas", groups:[{group:"Ombros",count:4},{group:"Costas",count:4}] },
+    { label:"E: Braços", groups:[{group:"Bíceps",count:5},{group:"Tríceps",count:4}] }
+  ];
+}
+
+function cycleToLength(templateArr, days) {
+  return Array.from({length:days}, (_,i) => templateArr[i % templateArr.length]);
+}
+
+function nextPlanName(levelWord) {
+  const existing = (state.plans||[]).filter(p => p.name && p.name.indexOf(levelWord) === 0).length;
+  return `${levelWord} ${existing+1}`;
+}
+
+function generateAutomatedPlan(days, level, focusGroup) {
+  const used = new Set(); // shared across days so the week doesn't repeat the same lift over and over
+  let dayPlans = [];
+
+  if(level === "rookie"){
+    const specs = cycleToLength(rookieTemplate(), days);
+    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, null));
+  } else if(level === "normal"){
+    const specs = cycleToLength(normalTemplate(), days);
+    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, null));
+  } else if(level === "advanced"){
+    const specs = cycleToLength(advancedTemplate(), days);
+    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, focusGroup));
+  } else if(level === "god"){
+    const godBase = godTemplate();
+    const baseSpecs = godBase.length <= days ? godBase : godBase.slice(0, days);
+    const extraDays = Math.max(0, days - 5);
+    dayPlans = baseSpecs.map(spec => dayFromSpec(spec, used, GOD_MODE_REST_NOTE, null));
+    // Dedicated specialization day(s) get their own fresh pool — it's normal
+    // for a specialization day to revisit a key lift already done earlier
+    // in the week, so it isn't limited by what the rest of the week used.
+    const usedForFocusDays = new Set();
+    for(let i=0; i<extraDays; i++){
+      const label = extraDays > 1 ? `F${i+1}: ${focusGroup} especializado` : `F: ${focusGroup} especializado`;
+      dayPlans.push(dayFromSpec({ label, groups:[{group:focusGroup, count:7}] }, usedForFocusDays, GOD_MODE_REST_NOTE, null));
+    }
+  }
+
+  const levelWord = {rookie:"Rookie", normal:"Normal", advanced:"Advanced", god:"GOD"}[level];
+  const planId = "plan_" + Date.now();
+  const finalDays = dayPlans.map((d,i) => ({ id: planId+"_d"+i, ...d }));
+  return { id: planId, name: nextPlanName(levelWord), days: finalDays };
+}
+
+// ---- Automated flow state & views ----
+let autoDays = 3;
+let autoLevel = "rookie";
+let autoFocusGroup = null;
+let autoPreviewPlan = null;
+
+function openCreateChoice() {
+  view = "createChoice";
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderCreateChoiceView() {
+  document.getElementById("tabs").style.display = "none";
+  document.getElementById("app").innerHTML = `
+    <div class="day-title">Criar treino</div>
+    <div class="day-focus">Como você quer montar seu treino?</div>
+    <div class="create-choice-grid">
+      <button class="create-choice-card" onclick="openAutomatedForm()">
+        <div class="create-choice-emoji">🤖</div>
+        <div class="create-choice-title">Automático</div>
+        <div class="create-choice-text">Responda algumas perguntas e eu monto o plano pra você.</div>
+      </button>
+      <button class="create-choice-card" onclick="startBuilder()">
+        <div class="create-choice-emoji">✍️</div>
+        <div class="create-choice-title">Personalizado</div>
+        <div class="create-choice-text">Escolha dia a dia, grupamento por grupamento, exercício por exercício.</div>
+      </button>
+    </div>
+  `;
+}
+
+function openAutomatedForm() {
+  view = "automatedForm";
+  render();
+}
+function autoSetDays(v) {
+  autoDays = parseInt(v, 10);
+  if(autoLevel === "advanced" && autoDays < 5) autoLevel = "normal";
+  if(autoLevel === "god" && autoDays < 6) autoLevel = "normal";
+  render();
+}
+function autoSetLevel(level) {
+  if(level === "advanced" && autoDays < 5) return;
+  if(level === "god" && autoDays < 6) return;
+  autoLevel = level;
+  if(level !== "advanced" && level !== "god") autoFocusGroup = null;
+  render();
+}
+function autoSetFocus(group) {
+  autoFocusGroup = group;
+  render();
+}
+function renderAutomatedFormView() {
+  document.getElementById("tabs").style.display = "none";
+  const needsFocus = (autoLevel === "advanced" || autoLevel === "god");
+  const focusGroups = MUSCLE_GROUPS;
+  document.getElementById("app").innerHTML = `
+    <div class="day-title">Treino automático</div>
+    <div class="day-focus">Responda e eu monto o plano pra você.</div>
+
+    <label>QUANTOS DIAS POR SEMANA: <strong>${autoDays}</strong></label>
+    <input type="range" min="1" max="7" step="1" value="${autoDays}" class="auto-slider" oninput="autoSetDays(this.value)">
+
+    <label style="margin-top:20px;">NÍVEL</label>
+    <div class="chip-grid">
+      <button class="chip ${autoLevel==='rookie'?'active':''}" onclick="autoSetLevel('rookie')">Rookie</button>
+      <button class="chip ${autoLevel==='normal'?'active':''}" onclick="autoSetLevel('normal')">Normal</button>
+      <button class="chip ${autoLevel==='advanced'?'active':''} ${autoDays<5?'chip-disabled':''}" onclick="autoSetLevel('advanced')">Advanced${autoDays<5?' 🔒':''}</button>
+      <button class="chip ${autoLevel==='god'?'active':''} ${autoDays<6?'chip-disabled':''}" onclick="autoSetLevel('god')">God Mode${autoDays<6?' 🔒':''}</button>
+    </div>
+    ${autoDays<5?'<div class="small-note">Advanced precisa de pelo menos 5 dias por semana. God Mode precisa de pelo menos 6.</div>':(autoDays<6?'<div class="small-note">God Mode precisa de pelo menos 6 dias por semana.</div>':'')}
+
+    ${needsFocus ? `
+      <label style="margin-top:20px;">QUAL GRUPAMENTO DEVE TER FOCO EXTRA?</label>
+      <div class="chip-grid">
+        ${focusGroups.map(g => `<button class="chip ${autoFocusGroup===g?'active':''}" onclick="autoSetFocus('${g}')">${g}</button>`).join("")}
+      </div>
+      ${autoLevel==='god'?'<div class="small-note">No God Mode, esse grupamento ganha um dia só pra ele. No Advanced, ele ganha exercícios extras nos dias em que já aparece.</div>':''}
+    ` : ''}
+
+    <div class="actions">
+      <button class="secondary" onclick="openCreateChoice()">Voltar</button>
+      <button class="primary" ${needsFocus && !autoFocusGroup ? 'disabled' : ''} onclick="generateAndPreview()">Gerar treino</button>
+    </div>
+  `;
+}
+function generateAndPreview() {
+  if((autoLevel==='advanced'||autoLevel==='god') && !autoFocusGroup){
+    showToast("Escolha o grupamento de foco extra.");
+    return;
+  }
+  autoPreviewPlan = generateAutomatedPlan(autoDays, autoLevel, autoFocusGroup);
+  view = "automatedPreview";
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function regenerateAutomated() {
+  autoPreviewPlan = generateAutomatedPlan(autoDays, autoLevel, autoFocusGroup);
+  render();
+}
+function discardAutomatedPreview() {
+  autoPreviewPlan = null;
+  view = "automatedForm";
+  render();
+}
+function confirmAutomatedPlan() {
+  if(!state.plans) state.plans = [];
+  state.plans.push(autoPreviewPlan);
+  state.activePlanId = autoPreviewPlan.id;
+  syncWorkoutsFromActivePlan();
+  currentDay = 0;
+  userPickedDay = false;
+  save();
+  autoPreviewPlan = null;
+  showToast("Treino criado! Agora ele é o seu treino ativo.");
+  switchView("workout");
+}
+function renderAutomatedPreviewView() {
+  document.getElementById("tabs").style.display = "none";
+  const plan = autoPreviewPlan;
+  let html = `
+    <div class="day-title">${escapeHtml(plan.name)}</div>
+    <div class="day-focus">Confira o plano antes de confirmar. Se quiser outra combinação, gere de novo.</div>
+  `;
+  plan.days.forEach(day => {
+    html += `<div class="report-day"><div class="report-day-header" style="cursor:default;"><div>
+      <div class="report-day-date">${escapeHtml(day.title)}</div>
+      <div class="report-day-titles">${escapeHtml(day.focus)}</div>
+    </div></div><div class="report-day-body" style="display:block;">`;
+    day.sections[0].exercises.forEach(ex => {
+      html += `<div class="cal-ex-row">
+        <div class="cal-ex-main"><div class="cal-ex-name">${escapeHtml(ex[0])}</div><div class="cal-ex-stats">${escapeHtml(ex[1])}</div></div>
+        ${ex[2]?`<button class="preview-eye" onclick="openExerciseDetail(${attrJSON(ex[0])},${attrJSON(ex[1])},${attrJSON(ex[2])},'automatedPreview')" title="Ver imagem">🖼️</button>`:''}
+      </div>`;
+      if(ex[3]) html += `<div class="cal-ex-comment">⏱️ ${escapeHtml(ex[3])}</div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `
+    <div class="actions">
+      <button class="secondary" onclick="discardAutomatedPreview()">Voltar</button>
+      <button class="secondary" onclick="regenerateAutomated()">🔀 Gerar outro</button>
+      <button class="primary" onclick="confirmAutomatedPlan()">Confirmar</button>
+    </div>
+  `;
+  document.getElementById("app").innerHTML = html;
 }
 
 // ---- Workout builder ----
@@ -895,7 +1230,7 @@ function renderMyPlansView() {
       ${state.plans.length>1?`<button class="plan-card-delete" onclick="deletePlan('${plan.id}')">🗑️</button>`:''}
     </div>`;
   });
-  html += `<button class="add-set-btn" onclick="startBuilder()">+ Criar novo treino</button>`;
+  html += `<button class="add-set-btn" onclick="openCreateChoice()">+ Criar novo treino</button>`;
   document.getElementById("app").innerHTML = html;
 }
 
@@ -1333,8 +1668,17 @@ function addSet(k) {
   const item = ensureItem(k);
   const firstReps = item.sets.length ? item.sets[0].reps : "";
   item.sets.push({weight:"", reps:firstReps});
+  const newIdx = item.sets.length - 1;
   save();
   render();
+  // Keep the new row in view and ready to type — a full re-render can
+  // otherwise leave the freshly added fields scrolled out of sight.
+  requestAnimationFrame(() => {
+    const row = document.getElementById(`setrow-${k}-${newIdx}`);
+    if(row) row.scrollIntoView({behavior:"smooth", block:"center"});
+    const input = document.getElementById(`weight-${k}-${newIdx}`);
+    if(input) input.focus({preventScroll:true});
+  });
 }
 function removeSet(k, idx) {
   const item = ensureItem(k);
@@ -1381,6 +1725,9 @@ function render() {
   else if(view === "myplans") { renderMyPlansView(); }
   else if(view === "exercise-detail") { renderExerciseDetailView(); }
   else if(view === "admin") { renderAdminView(); }
+  else if(view === "createChoice") { renderCreateChoiceView(); }
+  else if(view === "automatedForm") { renderAutomatedFormView(); }
+  else if(view === "automatedPreview") { renderAutomatedPreviewView(); }
   else { renderWorkoutView(); }
   setHeaderHeight();
 }
@@ -1402,6 +1749,17 @@ function centerActiveTab() {
 }
 
 function renderWorkoutView() {
+  if(!workouts.length){
+    document.getElementById("tabs").style.display = "none";
+    document.getElementById("app").innerHTML = `
+      <div class="empty-plan">
+        <div class="empty-plan-title">Você ainda não tem nenhum treino</div>
+        <div class="empty-plan-text">Monte seus dias, escolha os grupamentos e os exercícios para começar a acompanhar seu progresso.</div>
+        <button class="primary" onclick="openCreateChoice()">🧩 Criar treino</button>
+      </div>
+    `;
+    return;
+  }
   document.getElementById("tabs").style.display = "flex";
   renderTabs();
   const w = workouts[currentDay];
@@ -1437,14 +1795,15 @@ function renderWorkoutView() {
             <div class="name-wrap">
               <div class="name">${safeName}</div>
               <div class="muscle">${escapeHtml(exercise[1])}</div>
+              ${exercise[3]?`<div class="locked-rest-note">⏱️ ${escapeHtml(exercise[3])}</div>`:''}
             </div>
             <button class="howto" onclick="openExerciseDetail(${attrJSON(exercise[0])},${attrJSON(exercise[1])},${exercise[2]?attrJSON(exercise[2]):null})">▶ How to</button>
           </div>
           <div class="set-list">
             ${item.sets.map((st,si2)=>`
-              <div class="set-row ${item.stale?'stale':''}">
+              <div class="set-row ${item.stale?'stale':''}" id="setrow-${k}-${si2}">
                 <div class="set-label">${si2+1}</div>
-                <input type="number" inputmode="decimal" step="0.5" placeholder="kg"
+                <input type="number" inputmode="decimal" step="0.5" placeholder="kg" id="weight-${k}-${si2}"
                   value="${st.weight}" onchange="setSetField('${k}',${si2},'weight',this.value)">
                 <span class="set-x">×</span>
                 <input type="number" inputmode="numeric" placeholder="reps"
@@ -1492,6 +1851,7 @@ function renderWorkoutView() {
 
 function classifyMuscle(raw) {
   if(MUSCLE_GROUPS.includes(raw)) return [raw];
+  if(raw === "Antebraço/Trapézio") return ["Costas"]; // legacy data from before this category was split up
   const stopWords = ["upper","mid","lower","front","rear"];
   return String(raw).split("/").map(p => p.trim()).map(p => {
     const low = p.toLowerCase();
@@ -1499,10 +1859,9 @@ function classifyMuscle(raw) {
     if(low.includes("delt")) return "Ombros";
     if(low.includes("chest")) return "Peito";
     if(low.includes("tricep")) return "Tríceps";
-    if(low.includes("bicep") || low.includes("brachialis")) return "Bíceps";
-    if(low.includes("lat") || low.includes("back")) return "Costas";
+    if(low.includes("bicep") || low.includes("brachialis") || low.includes("forearm")) return "Bíceps";
+    if(low.includes("lat") || low.includes("back") || low.includes("trap")) return "Costas";
     if(low.includes("quad") || low.includes("hamstring") || low.includes("glute") || low.includes("calv")) return "Perna";
-    if(low.includes("forearm") || low.includes("trap")) return "Antebraço/Trapézio";
     if(low.includes("abdomin")) return "Abdômen";
     return p;
   }).filter(Boolean);
@@ -1515,11 +1874,8 @@ function getMuscleGroupCounts() {
     (history[dk]||[]).forEach(entry => {
       (entry.exercises||[]).forEach(ex => {
         if(!ex.muscle) return;
-        classifyMuscle(ex.muscle).forEach(g => { counts[g] = (counts[g]||0) + 1; });
+        classifyMuscle(ex.muscle).forEach(g => { if(counts.hasOwnProperty(g)) counts[g] = (counts[g]||0) + 1; });
       });
-      if(entry.cardio && entry.cardio.type){
-        counts["Cardio"] = (counts["Cardio"]||0) + 1;
-      }
     });
   });
   return counts;
@@ -1542,20 +1898,17 @@ function renderReportView() {
   `;
 
   const muscleCounts = getMuscleGroupCounts();
-  const sortedMuscles = Object.entries(muscleCounts).sort((a,b) => b[1]-a[1]);
-  if(sortedMuscles.length){
-    const maxCount = sortedMuscles[0][1];
-    html += `<div class="section-title">Grupamentos musculares mais trabalhados</div><div class="muscle-chart">`;
-    sortedMuscles.forEach(([g,count]) => {
-      const pct = maxCount ? (count/maxCount*100) : 0;
-      html += `<div class="muscle-row">
-        <div class="muscle-label">${escapeHtml(g)}</div>
-        <div class="muscle-bar-wrap"><div class="muscle-bar" style="width:${pct}%"></div></div>
-        <div class="muscle-count">${count}</div>
-      </div>`;
-    });
-    html += `</div>`;
-  }
+  const orderedMuscles = MUSCLE_GROUPS.map(g => [g, muscleCounts[g]||0]);
+  const maxCount = Math.max(0, ...orderedMuscles.map(([,c])=>c));
+  html += `<div class="section-title">Grupamentos musculares mais trabalhados</div><div class="muscle-chart">`;
+  orderedMuscles.forEach(([g,count]) => {
+    const pct = maxCount ? (count/maxCount*100) : 0;
+    html += `<div class="muscle-row">
+      <div class="muscle-label">${escapeHtml(g)}</div>
+      <div class="muscle-bar-wrap"><div class="muscle-bar" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+  html += `</div>`;
 
   html += `<div class="section-title">Sessões registradas</div>`;
 
@@ -1596,7 +1949,7 @@ function renderReportView() {
   }
   html += `<div class="section-title">Meus treinos</div>
     <div class="plan-mgmt-actions">
-      <button class="secondary" onclick="startBuilder()">🧩 Criar novo treino</button>
+      <button class="secondary" onclick="openCreateChoice()">🧩 Criar novo treino</button>
       <button class="secondary" onclick="switchView('myplans')">📋 Meus treinos (${state.plans.length})</button>
     </div>`;
   if(confirmingReset){
@@ -1842,6 +2195,9 @@ function renderExerciseRow(ex) {
     <div class="cal-ex-name">${ex.isPB?'🔥 ':''}${escapeHtml(ex.name)}</div>
     <div class="cal-ex-stats">${formatSets(ex)}</div>
   </div>`;
+  if(ex.restNote){
+    html += `<div class="cal-ex-comment">⏱️ ${escapeHtml(ex.restNote)}</div>`;
+  }
   if(ex.comment){
     html += `<div class="cal-ex-comment">💬 ${escapeHtml(ex.comment)}</div>`;
   }
@@ -1888,7 +2244,9 @@ function saveProgress() {
         .filter(n => !isNaN(n));
       const maxWeightThisSave = weightsThisSave.length ? Math.max(...weightsThisSave) : null;
       const isPB = maxWeightThisSave !== null && prevBest !== null && maxWeightThisSave > prevBest;
-      exerciseMap[e[0]] = {name:e[0], muscle:e[1], comment:item.comment||"", sets:setsToSave, isPB};
+      const saved = {name:e[0], muscle:e[1], comment:item.comment||"", sets:setsToSave, isPB};
+      if(e[3]) saved.restNote = e[3];
+      exerciseMap[e[0]] = saved;
     }
   }));
 

@@ -62,13 +62,15 @@ header {
 }
 .auth-user-bar-actions { display:flex; align-items:center; gap:10px; }
 .auth-logout { background:transparent; border:none; color:#ddd; text-decoration:underline; padding:2px 4px; font-weight:700; font-size:12px; }
+.admin-impersonate-badge { background:#7c3aed; color:white; padding:3px 9px; border-radius:999px; font-weight:700; font-size:11px; }
 .auth-admin-btn { background:transparent; border:1px solid #444; color:#ffd97a; padding:3px 9px; font-weight:700; font-size:11px; border-radius:999px; }
 .admin-row {
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   background:white; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px;
 }
 .admin-row-email { font-size:13px; font-weight:700; word-break:break-all; }
-.admin-approve-btn, .admin-revoke-btn { flex-shrink:0; padding:8px 14px; font-size:12px; }
+.admin-row-actions { display:flex; gap:6px; flex-shrink:0; }
+.admin-approve-btn, .admin-revoke-btn, .admin-view-btn { flex-shrink:0; padding:8px 12px; font-size:12px; }
 .admin-revoke-btn { color:#b23b3b; border-color:#eecccc; }
 h1 { font-size:24px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
 .subtitle { color:#aaa; font-size:13px; }
@@ -168,7 +170,10 @@ button {
   border:0; border-radius:11px; padding:11px 13px; font-weight:750;
   cursor:pointer; font-size:13px; color:var(--text); font-family:inherit;
   -webkit-appearance:none; appearance:none;
+  transition:transform .08s ease, opacity .08s ease;
 }
+button:active { transform:scale(0.96); opacity:.8; }
+button:disabled { opacity:.5; cursor:default; transform:none; }
 .secondary { background:white; border:1px solid var(--line); }
 .primary { background:#111; color:white; flex:1; padding:13px; font-size:14px; }
 .small-note { color:var(--muted); font-size:12px; margin-top:15px; text-align:center; }
@@ -413,12 +418,12 @@ const DEFAULT_WORKOUTS = [
     focus:"Priority: lateral deltoid",
     sections:[
       {name:"Shoulders", exercises:[
-        ["Shoulder press (machine or dumbbells)","Deltoid"],
-        ["Dumbbell lateral raise","Lateral deltoid"],
-        ["Machine lateral raise","Lateral deltoid"],
-        ["Single-arm cable lateral raise","Lateral deltoid"],
-        ["Reverse pec deck","Rear deltoid"],
-        ["Face pull","Rear deltoid / upper back"]
+        ["Arnold Dumbbell Press","Ombros","Arnold_Dumbbell_Press"],
+        ["Alternating Deltoid Raise","Ombros","Alternating_Deltoid_Raise"],
+        ["Cable Seated Lateral Raise","Ombros",null],
+        ["Bent Over Low-Pulley Side Lateral","Ombros","Bent_Over_Low-Pulley_Side_Lateral"],
+        ["Cable Rear Delt Fly","Ombros",null],
+        ["Cable Rope Rear-Delt Rows","Ombros",null]
       ]}
     ]
   },
@@ -429,17 +434,17 @@ const DEFAULT_WORKOUTS = [
     focus:"Chest work with extra lateral-delt volume",
     sections:[
       {name:"Chest", exercises:[
-        ["Incline bench press","Chest"],
-        ["Flat bench press","Chest"],
-        ["Machine chest fly","Chest"]
+        ["Barbell Incline Bench Press - Medium Grip","Peito","Barbell_Incline_Bench_Press_-_Medium_Grip"],
+        ["Barbell Bench Press - Medium Grip","Peito","Barbell_Bench_Press_-_Medium_Grip"],
+        ["Machine Chest Fly","Peito",null]
       ]},
       {name:"Shoulders", exercises:[
-        ["Dumbbell lateral raise","Lateral deltoid"],
-        ["Machine lateral raise","Lateral deltoid"]
+        ["Alternating Deltoid Raise","Ombros","Alternating_Deltoid_Raise"],
+        ["Cable Seated Lateral Raise","Ombros",null]
       ]},
       {name:"Triceps", exercises:[
-        ["Rope triceps pushdown","Triceps"],
-        ["W-bar triceps extension","Triceps"]
+        ["Tricep Pushdown (Rope)","Tríceps",null],
+        ["Tricep Pushdown (Bar)","Tríceps",null]
       ]}
     ]
   },
@@ -450,20 +455,20 @@ const DEFAULT_WORKOUTS = [
     focus:"Back width and thickness + lateral delts",
     sections:[
       {name:"Back", exercises:[
-        ["Wide-grip lat pulldown","Lats"],
-        ["Seated cable row, neutral grip","Back"],
-        ["Single-arm dumbbell row","Back"],
-        ["Chest-supported machine row","Upper / mid back"],
-        ["Cable pullover","Lats"]
+        ["Band Assisted Pull-Up","Costas","Band_Assisted_Pull-Up"],
+        ["Bent Over Two-Dumbbell Row With Palms In","Costas","Bent_Over_Two-Dumbbell_Row_With_Palms_In"],
+        ["Bent Over One-Arm Long Bar Row","Costas","Bent_Over_One-Arm_Long_Bar_Row"],
+        ["Bodyweight Mid Row","Costas","Bodyweight_Mid_Row"],
+        ["Bent-Arm Barbell Pullover","Costas","Bent-Arm_Barbell_Pullover"]
       ]},
       {name:"Shoulders", exercises:[
-        ["Single-arm cable lateral raise","Lateral deltoid"],
-        ["Reverse pec deck","Rear deltoid"]
+        ["Bent Over Low-Pulley Side Lateral","Ombros","Bent_Over_Low-Pulley_Side_Lateral"],
+        ["Cable Rear Delt Fly","Ombros",null]
       ]},
       {name:"Biceps", exercises:[
-        ["W-bar biceps curl","Biceps"],
-        ["Incline dumbbell curl","Biceps"],
-        ["Hammer curl","Biceps / brachialis"]
+        ["EZ-Bar Curl","Bíceps",null],
+        ["Alternate Incline Dumbbell Curl","Bíceps","Alternate_Incline_Dumbbell_Curl"],
+        ["Alternate Hammer Curl","Bíceps","Alternate_Hammer_Curl"]
       ]}
     ]
   },
@@ -474,18 +479,18 @@ const DEFAULT_WORKOUTS = [
     focus:"Biceps, triceps and calf work",
     sections:[
       {name:"Biceps", exercises:[
-        ["W-bar biceps curl","Biceps"],
-        ["Incline dumbbell curl","Biceps"],
-        ["Hammer curl","Biceps / brachialis"]
+        ["EZ-Bar Curl","Bíceps",null],
+        ["Alternate Incline Dumbbell Curl","Bíceps","Alternate_Incline_Dumbbell_Curl"],
+        ["Alternate Hammer Curl","Bíceps","Alternate_Hammer_Curl"]
       ]},
       {name:"Triceps", exercises:[
-        ["W-bar skull crusher","Triceps"],
-        ["Rope triceps pushdown","Triceps"],
-        ["Single-arm cable triceps extension","Triceps"]
+        ["Band Skull Crusher","Tríceps","Band_Skull_Crusher"],
+        ["Tricep Pushdown (Rope)","Tríceps",null],
+        ["Cable One Arm Tricep Extension","Tríceps",null]
       ]},
       {name:"Calves", exercises:[
-        ["Standing calf raise","Calves"],
-        ["Seated calf raise","Calves"]
+        ["Calf Raise On A Dumbbell","Perna",null],
+        ["Barbell Seated Calf Raise","Perna","Barbell_Seated_Calf_Raise"]
       ]}
     ]
   },
@@ -496,13 +501,13 @@ const DEFAULT_WORKOUTS = [
     focus:"Quads, hamstrings, glutes and calves",
     sections:[
       {name:"Legs", exercises:[
-        ["Squat or leg press","Quads / glutes"],
-        ["Leg extension","Quads"],
-        ["Lying leg curl","Hamstrings"],
-        ["Romanian deadlift","Hamstrings / glutes"],
-        ["Seated leg curl","Hamstrings"],
-        ["Glute machine or cable kickback","Glutes"],
-        ["Standing calf raise or calf press","Calves"]
+        ["Barbell Squat","Perna","Barbell_Squat"],
+        ["Barbell Hack Squat","Perna","Barbell_Hack_Squat"],
+        ["Ball Leg Curl","Perna","Ball_Leg_Curl"],
+        ["Band Good Morning","Perna","Band_Good_Morning"],
+        ["Band Good Morning (Pull Through)","Perna","Band_Good_Morning_Pull_Through"],
+        ["Barbell Hip Thrust","Perna","Barbell_Hip_Thrust"],
+        ["Calf Press","Perna",null]
       ]}
     ]
   }
@@ -754,15 +759,23 @@ function libIdFor(group, name) {
   const entry = (EXERCISE_LIBRARY[group]||[]).find(e => e[0] === name);
   return entry ? entry[1] : null;
 }
-function pickFromGroup(group, count, used) {
-  const pool = (EXERCISE_LIBRARY[group]||[]).map(e=>e[0]).filter(n => !used.has(n));
+// Shrug/grip exercises absorbed into Costas/Bíceps when the dedicated
+// trapézio/antebraço category was retired — only unlocked from Advanced on.
+const ADVANCED_ONLY_EXTRAS = new Set([
+  "Barbell Shrug","Barbell Shrug Behind The Back","Cable Shrugs","Dumbbell Shrug",
+  "Cable Wrist Curl","Reverse Wrist Curl","Wrist Roller","Farmer's Walk"
+]);
+
+function pickFromGroup(group, count, used, allowExtras) {
+  let pool = (EXERCISE_LIBRARY[group]||[]).map(e=>e[0]).filter(n => !used.has(n));
+  if(!allowExtras) pool = pool.filter(n => !ADVANCED_ONLY_EXTRAS.has(n));
   const chosen = shuffled(pool).slice(0, count);
   chosen.forEach(n => used.add(n));
   return chosen.map(n => [n, group, libIdFor(group,n)]);
 }
-function pickBalanced(group, count, used) {
+function pickBalanced(group, count, used, allowExtras) {
   const portions = EXERCISE_PORTIONS[group];
-  if(!portions) return pickFromGroup(group, count, used);
+  if(!portions) return pickFromGroup(group, count, used, allowExtras);
   const portionNames = Object.keys(portions);
   const result = [];
   let i = 0;
@@ -780,20 +793,20 @@ function pickBalanced(group, count, used) {
   }
   return result;
 }
-function pickExercises(group, count, used) {
+function pickExercises(group, count, used, allowExtras) {
   if(count <= 0) return [];
-  return EXERCISE_PORTIONS[group] ? pickBalanced(group, count, used) : pickFromGroup(group, count, used);
+  return EXERCISE_PORTIONS[group] ? pickBalanced(group, count, used, allowExtras) : pickFromGroup(group, count, used, allowExtras);
 }
 function addRestNotes(exList, note) {
   return exList.map(e => [e[0], e[1], e[2], note]);
 }
-function dayFromSpec(spec, used, restNote, extraGroup) {
+function dayFromSpec(spec, used, restNote, extraGroup, allowExtras) {
   // spec: { label, groups: [{group, count}, ...] }
   let exercises = [];
   spec.groups.forEach(g => {
     let count = g.count;
     if(extraGroup && g.group === extraGroup) count += 2;
-    exercises = exercises.concat(pickExercises(g.group, count, used));
+    exercises = exercises.concat(pickExercises(g.group, count, used, allowExtras));
   });
   if(restNote) exercises = addRestNotes(exercises, restNote);
   const muscleGroups = spec.groups.map(g=>g.group);
@@ -808,10 +821,12 @@ function dayFromSpec(spec, used, restNote, extraGroup) {
 const GOD_MODE_REST_NOTE = "Descanso: 45s entre séries (fixo)";
 
 function rookieTemplate() {
-  return [
-    { label:"Full Body A", groups:[{group:"Peito",count:1},{group:"Costas",count:1},{group:"Perna",count:2},{group:"Ombros",count:1},{group:"Abdômen",count:1}] },
-    { label:"Full Body B", groups:[{group:"Peito",count:1},{group:"Costas",count:1},{group:"Perna",count:2},{group:"Ombros",count:1},{group:"Abdômen",count:1}] }
-  ];
+  // A single full-body session, covering every group, repeated across the
+  // week — not an A/B rotation.
+  return { label:"Full Body", groups:[
+    {group:"Peito",count:1},{group:"Costas",count:1},{group:"Ombros",count:1},
+    {group:"Bíceps",count:1},{group:"Tríceps",count:1},{group:"Abdômen",count:1},{group:"Perna",count:2}
+  ] };
 }
 function normalTemplate() {
   return [
@@ -851,28 +866,31 @@ function nextPlanName(levelWord) {
 function generateAutomatedPlan(days, level, focusGroup) {
   const used = new Set(); // shared across days so the week doesn't repeat the same lift over and over
   let dayPlans = [];
+  const allowExtras = (level === "advanced" || level === "god");
 
   if(level === "rookie"){
-    const specs = cycleToLength(rookieTemplate(), days);
-    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, null));
+    // Generate the single full-body session once, then repeat the exact
+    // same exercises for every day chosen.
+    const template = dayFromSpec(rookieTemplate(), used, null, null, allowExtras);
+    dayPlans = Array.from({length: days}, () => JSON.parse(JSON.stringify(template)));
   } else if(level === "normal"){
     const specs = cycleToLength(normalTemplate(), days);
-    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, null));
+    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, null, allowExtras));
   } else if(level === "advanced"){
     const specs = cycleToLength(advancedTemplate(), days);
-    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, focusGroup));
+    dayPlans = specs.map(spec => dayFromSpec(spec, used, null, focusGroup, allowExtras));
   } else if(level === "god"){
     const godBase = godTemplate();
     const baseSpecs = godBase.length <= days ? godBase : godBase.slice(0, days);
     const extraDays = Math.max(0, days - 5);
-    dayPlans = baseSpecs.map(spec => dayFromSpec(spec, used, GOD_MODE_REST_NOTE, null));
+    dayPlans = baseSpecs.map(spec => dayFromSpec(spec, used, GOD_MODE_REST_NOTE, null, allowExtras));
     // Dedicated specialization day(s) get their own fresh pool — it's normal
     // for a specialization day to revisit a key lift already done earlier
     // in the week, so it isn't limited by what the rest of the week used.
     const usedForFocusDays = new Set();
     for(let i=0; i<extraDays; i++){
       const label = extraDays > 1 ? `F${i+1}: ${focusGroup} especializado` : `F: ${focusGroup} especializado`;
-      dayPlans.push(dayFromSpec({ label, groups:[{group:focusGroup, count:7}] }, usedForFocusDays, GOD_MODE_REST_NOTE, null));
+      dayPlans.push(dayFromSpec({ label, groups:[{group:focusGroup, count:7}] }, usedForFocusDays, GOD_MODE_REST_NOTE, null, allowExtras));
     }
   }
 
@@ -987,7 +1005,10 @@ function discardAutomatedPreview() {
   view = "automatedForm";
   render();
 }
+let confirmingPlanSave = false;
 function confirmAutomatedPlan() {
+  if(confirmingPlanSave || !autoPreviewPlan) return;
+  confirmingPlanSave = true;
   if(!state.plans) state.plans = [];
   state.plans.push(autoPreviewPlan);
   state.activePlanId = autoPreviewPlan.id;
@@ -998,6 +1019,7 @@ function confirmAutomatedPlan() {
   autoPreviewPlan = null;
   showToast("Treino criado! Agora ele é o seu treino ativo.");
   switchView("workout");
+  confirmingPlanSave = false;
 }
 function renderAutomatedPreviewView() {
   document.getElementById("tabs").style.display = "none";
@@ -1220,14 +1242,21 @@ function renderMyPlansView() {
     <div class="day-title">Meus treinos</div>
     <div class="day-focus">Toque em um treino para ativá-lo. O histórico é o mesmo, não importa qual esteja ativo.</div>
   `;
-  state.plans.forEach(plan => {
+  const validPlans = (state.plans||[]).filter(p => p && p.id && Array.isArray(p.days));
+  if(validPlans.length !== (state.plans||[]).length){
+    // Silently drop any corrupted entries (e.g. from a past double-tap bug)
+    // so the list never gets stuck unusable.
+    state.plans = validPlans;
+    save();
+  }
+  validPlans.forEach(plan => {
     const isActive = plan.id === state.activePlanId;
     html += `<div class="plan-card ${isActive?'active':''}">
       <div class="plan-card-info" onclick="selectPlanCard('${plan.id}')">
-        <div class="plan-card-name">${escapeHtml(plan.name)}${isActive?' ✓':''}</div>
-        <div class="plan-card-days">${plan.days.length} dia${plan.days.length>1?'s':''}: ${plan.days.map(d=>escapeHtml(d.title)).join(", ")}</div>
+        <div class="plan-card-name">${escapeHtml(plan.name||"Treino sem nome")}${isActive?' ✓':''}</div>
+        <div class="plan-card-days">${plan.days.length} dia${plan.days.length>1?'s':''}: ${plan.days.map(d=>escapeHtml(d.title||"")).join(", ")}</div>
       </div>
-      ${state.plans.length>1?`<button class="plan-card-delete" onclick="deletePlan('${plan.id}')">🗑️</button>`:''}
+      ${validPlans.length>1?`<button class="plan-card-delete" onclick="deletePlan('${plan.id}')">🗑️</button>`:''}
     </div>`;
   });
   html += `<button class="add-set-btn" onclick="openCreateChoice()">+ Criar novo treino</button>`;
@@ -1319,12 +1348,16 @@ if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex ==
 }
 let db = null;
 let stateDirty = false;
+// Nothing gets written to the cloud until we've actually read it at least
+// once — otherwise an early save (before the cloud fetch finishes) could
+// push incomplete local data and permanently overwrite what's already saved.
+let cloudReady = false;
 let historyDirty = false;
 
 async function initDb() {
-  if(!window.claude) return;
+  if(!window.claude) { cloudReady = true; return; }
   try { db = await window.claude.use("db"); } catch(e) { db = null; }
-  if(!db) return;
+  if(!db) { cloudReady = true; return; }
   try {
     const [stateSnap, histSnap] = await Promise.all([
       db.doc("data/state").get(),
@@ -1347,6 +1380,9 @@ async function initDb() {
       }
     }
   } catch(e) { /* keep local data as fallback */ }
+  cloudReady = true;
+  if(stateDirty) save();
+  if(historyDirty) saveHistoryData();
   render();
 }
 
@@ -1407,6 +1443,9 @@ function handleAuthUser(user) {
     }
   } else {
     fbUser = null;
+    cloudReady = false;
+    stateDirty = false;
+    historyDirty = false;
     stopApprovalListener();
     document.getElementById("authScreen").style.display = "flex";
     document.getElementById("approvalScreen").style.display = "none";
@@ -1419,14 +1458,8 @@ function enterApp() {
   document.getElementById("approvalScreen").style.display = "none";
   document.getElementById("appRoot").style.display = "";
   setHeaderHeight();
-  const bar = document.getElementById("authUserBar");
-  bar.style.display = "flex";
-  const isAdmin = fbUser.email === ADMIN_EMAIL;
-  bar.innerHTML = `<span>${escapeHtml(fbUser.email||"")}</span>
-    <span class="auth-user-bar-actions">
-      ${isAdmin?'<button class="auth-admin-btn" onclick="switchView(\'admin\')">👑 Admin</button>':''}
-      <button class="auth-logout" onclick="authLogout()">Sair</button>
-    </span>`;
+  document.getElementById("authUserBar").style.display = "flex";
+  renderAdminBar();
   loadFromFirestore();
 }
 
@@ -1487,7 +1520,10 @@ function renderAdminView() {
     html += approved.length ? approved.map(p => `
       <div class="admin-row">
         <div class="admin-row-email">${escapeHtml(p.email||p.uid)}</div>
-        <button class="secondary admin-revoke-btn" onclick="revokeUser('${p.uid}')">Revogar</button>
+        <div class="admin-row-actions">
+          <button class="secondary admin-view-btn" onclick="adminImpersonate('${p.uid}',${attrJSON(p.email||p.uid)})">🔑 Entrar na conta</button>
+          <button class="secondary admin-revoke-btn" onclick="revokeUser('${p.uid}')">Revogar</button>
+        </div>
       </div>`).join("") : `<div class="small-note">Ninguém aprovado ainda.</div>`;
     document.getElementById("app").innerHTML = html;
   }).catch(() => {
@@ -1506,6 +1542,70 @@ function revokeUser(uid) {
     .catch(() => showToast("Erro ao revogar. Tente de novo."));
 }
 
+// ---- Admin: enter a user's account with full access ----
+let adminImpersonating = null; // {uid, email} while active
+let adminOwnState = null;
+let adminOwnHistory = null;
+
+function adminImpersonate(uid, email) {
+  adminOwnState = state;
+  adminOwnHistory = history;
+  adminImpersonating = { uid, email };
+  showToast("Entrando na conta de " + email + "...");
+  fb.db.collection("users").doc(uid).get().then(snap => {
+    const data = snap.exists ? (snap.data()||{}) : {};
+    state = data.state ? JSON.parse(JSON.stringify(data.state)) : {};
+    history = data.history ? JSON.parse(JSON.stringify(data.history)) : {};
+    ensurePlans();
+    userPickedDay = false;
+    if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex === "number"){
+      currentDay = state.__lastTabIndex;
+      userPickedDay = true;
+    } else {
+      currentDay = getNextWorkoutIndex();
+    }
+    renderAdminBar();
+    switchView("workout");
+  }).catch(() => {
+    showToast("Erro ao carregar essa conta.");
+    state = adminOwnState; history = adminOwnHistory;
+    adminOwnState = null; adminOwnHistory = null;
+    adminImpersonating = null;
+  });
+}
+function adminStopImpersonating() {
+  state = adminOwnState;
+  history = adminOwnHistory;
+  adminOwnState = null;
+  adminOwnHistory = null;
+  adminImpersonating = null;
+  ensurePlans();
+  userPickedDay = false;
+  if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex === "number"){
+    currentDay = state.__lastTabIndex;
+    userPickedDay = true;
+  } else {
+    currentDay = getNextWorkoutIndex();
+  }
+  renderAdminBar();
+  showToast("Você voltou para a sua própria conta.");
+  switchView("workout");
+}
+function renderAdminBar() {
+  const bar = document.getElementById("authUserBar");
+  if(adminImpersonating){
+    bar.innerHTML = `<span class="admin-impersonate-badge">🔧 Editando: ${escapeHtml(adminImpersonating.email)}</span>
+      <button class="auth-logout" onclick="adminStopImpersonating()">Voltar à minha conta</button>`;
+  } else {
+    const isAdmin = fbUser && fbUser.email === ADMIN_EMAIL;
+    bar.innerHTML = `<span>${escapeHtml((fbUser&&fbUser.email)||"")}</span>
+      <span class="auth-user-bar-actions">
+        ${isAdmin?'<button class="auth-admin-btn" onclick="switchView(\'admin\')">👑 Admin</button>':''}
+        <button class="auth-logout" onclick="authLogout()">Sair</button>
+      </span>`;
+  }
+}
+
 async function loadFromFirestore() {
   try {
     const snap = await fb.db.collection("users").doc(fbUser.uid).get();
@@ -1515,6 +1615,7 @@ async function loadFromFirestore() {
       if(!historyDirty && data.history) history = JSON.parse(JSON.stringify(data.history));
     }
   } catch(e) { /* keep local fallback */ }
+  cloudReady = true;
   ensurePlans();
   if(!userPickedDay){
     if(state.__lastTabDate === dateKey(new Date()) && typeof state.__lastTabIndex === "number"){
@@ -1524,6 +1625,8 @@ async function loadFromFirestore() {
       currentDay = getNextWorkoutIndex();
     }
   }
+  if(stateDirty) save();
+  if(historyDirty) saveHistoryData();
   render();
 }
 
@@ -1616,20 +1719,35 @@ function authReset() {
 }
 function authLogout() {
   stopApprovalListener();
+  adminImpersonating = null;
+  adminOwnState = null;
+  adminOwnHistory = null;
   if(fb) fb.auth.signOut();
 }
 
 function save() {
   stateDirty = true;
+  if(adminImpersonating){
+    // Editing someone else's account as admin: write only to their doc,
+    // never touch this browser's own localStorage cache.
+    if(fb) fb.db.collection("users").doc(adminImpersonating.uid).set({state}, {merge:true}).catch(()=>{});
+    return;
+  }
   try { localStorage.setItem(KEY, JSON.stringify(state)); }
   catch(e) { storageOK = false; }
+  if(!cloudReady) return; // never push to the cloud before we've read it
   if(db) { db.doc("data/state").set(state).catch(()=>{}); }
   if(fb && fbUser) { fb.db.collection("users").doc(fbUser.uid).set({state}, {merge:true}).catch(()=>{}); }
 }
 function saveHistoryData() {
   historyDirty = true;
+  if(adminImpersonating){
+    if(fb) fb.db.collection("users").doc(adminImpersonating.uid).set({history}, {merge:true}).catch(()=>{});
+    return;
+  }
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }
   catch(e) { storageOK = false; }
+  if(!cloudReady) return; // never push to the cloud before we've read it
   if(db) { db.doc("data/history").set(history).catch(()=>{}); }
   if(fb && fbUser) { fb.db.collection("users").doc(fbUser.uid).set({history}, {merge:true}).catch(()=>{}); }
 }
@@ -1973,7 +2091,9 @@ function resetAllData() {
   state = {};
   history = {};
   ensurePlans();
-  try { localStorage.removeItem(KEY); localStorage.removeItem(HISTORY_KEY); } catch(e) {}
+  if(!adminImpersonating){
+    try { localStorage.removeItem(KEY); localStorage.removeItem(HISTORY_KEY); } catch(e) {}
+  }
   save();
   saveHistoryData();
   currentDay = 0;
